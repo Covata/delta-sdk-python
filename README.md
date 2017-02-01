@@ -9,3 +9,7 @@ Covata Delta provides an easy to use framework for sharing secrets across networ
 - Python 2.7 +
 - Python 3.3 +
 
+
+## License
+
+Copyright 2016 Covata Limited or its affiliates - Released under the [Apache 2.0 license](http://www.apache.org/licenses/LICENSE-2.0.html).
