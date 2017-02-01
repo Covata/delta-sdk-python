@@ -41,6 +41,11 @@ def set_properties(project):
     project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_break_build", True)
 
+    # Coverage
+    project.set_property("coverage_threshold_warn", 70)
+    project.set_property("coverage_branch_threshold_warn", 70)
+    project.set_property("coverage_branch_partial_threshold_warn", 70)
+
     # Project
     project.version = "0.0.1-alpha"
     project.depends_on_requirements("requirements.txt")
