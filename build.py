@@ -25,7 +25,7 @@ use_plugin('python.pycharm')
 
 
 name = "delta-sdk-python"
-default_task = ['install_dependencies', 'publish']
+default_task = ['install_dependencies', 'analyze', 'run_unit_tests', 'publish']
 
 
 @init
@@ -39,6 +39,8 @@ def set_properties(project):
     project.set_property("flake8_max_line_length", 80)
     project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_break_build", True)
+    project.set_property("flake8_exclude_patterns",
+                         ".git, .idea, target, venv, setup.py, build.py")
 
     # Coverage
     project.set_property("coverage_threshold_warn", 70)
