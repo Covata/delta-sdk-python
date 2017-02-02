@@ -4,8 +4,7 @@ python:
   - 3.3
   - 3.5
 install:
-  - pip install pybuilder
-  - pip install coveralls
+  - pip install pytest pytest-cov pybuilder coveralls
 script:
   pyb
 after_success:
