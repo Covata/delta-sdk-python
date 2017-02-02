@@ -12,12 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import unittest
-
 import covata.delta as delta
 
 
-class TestMultiply(unittest.TestCase):
-
-    def test_multiply(self):
-        self.assertEqual(delta.multiply(5, 5), 25)
+def test_multiply():
+    assert delta.multiply(5, 5) == 25
