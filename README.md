@@ -1,7 +1,8 @@
 # Covata Delta Python SDK
 [![Build Status](https://travis-ci.org/Covata/delta-sdk-python.svg?branch=master)](https://travis-ci.org/Covata/delta-sdk-python)
 [![Coverage Status](https://coveralls.io/repos/github/Covata/delta-sdk-python/badge.svg)](https://coveralls.io/github/Covata/delta-sdk-python)
-
+[![Documentation Status](http://delta-sdk-python.readthedocs.io/en/latest/?badge=latest)](https://coveralls.io/github/Covata/delta-sdk-python)
+http://delta-sdk-python.readthedocs.io/en/latest/?badge=latest
 Covata Delta provides an easy to use framework for sharing secrets across networks, and organisations.
 
 ## Requirements
