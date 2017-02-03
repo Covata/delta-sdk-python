@@ -25,8 +25,7 @@ use_plugin('python.pycharm')
 
 
 name = "delta-sdk-python"
-default_task = ['clean', 'install_dependencies', 'analyze', 'publish',
-                'sphinx_generate_documentation']
+default_task = ['install_dependencies', 'analyze', 'publish']
 
 
 @init
