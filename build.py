@@ -20,6 +20,7 @@ use_plugin("pypi:pybuilder_pytest")
 use_plugin("python.install_dependencies")
 use_plugin("python.flake8")
 use_plugin("python.distutils")
+use_plugin("python.sphinx")
 use_plugin('python.pycharm')
 
 
@@ -41,6 +42,12 @@ def set_properties(project):
     project.set_property("flake8_break_build", True)
     project.set_property("flake8_exclude_patterns",
                          ".git, .idea, target, venv, setup.py, build.py")
+
+    # Docs
+    project.depends_on("sphinx-rtd-theme", "0.1.9")
+    project.set_property("sphinx_config_path", "docs")
+    project.set_property("sphinx_source_dir", "docs")
+    project.set_property("sphinx_output_dir", "docs/_build")
 
     # Project
     project.version = "0.0.1-alpha"
