@@ -12,25 +12,12 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
+API documentation
+=================
 
-.. Covata Delta Python SDK documentation master file, created by
-   sphinx-quickstart on Fri Feb  3 09:09:03 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. automodule:: covata
+    :members:
 
-Welcome to Covata Delta Python SDK's documentation!
-===================================================
 
-.. toctree::
-    :maxdepth: 2
-    :caption: Contents:
-
-    get_started
-    api
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. automodule:: covata.delta
+    :members:

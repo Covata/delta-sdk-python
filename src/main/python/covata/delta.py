@@ -16,6 +16,11 @@
 def multiply(x, y):
     # type: (float, float) -> float
     """
-    multiplies two floating point numbers
+    Multiplies two floating point numbers.
+
+    :param float x: first parameter
+    :param float y: second parameter
+    :return: the multiplication result
+    :rtype: float
     """
     return x * y
