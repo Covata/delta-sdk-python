@@ -20,11 +20,13 @@ use_plugin("pypi:pybuilder_pytest")
 use_plugin("python.install_dependencies")
 use_plugin("python.flake8")
 use_plugin("python.distutils")
+use_plugin("python.sphinx")
 use_plugin('python.pycharm')
 
 
 name = "delta-sdk-python"
-default_task = ['install_dependencies', 'analyze', 'publish']
+default_task = ['clean', 'install_dependencies', 'analyze', 'publish',
+                'sphinx_generate_documentation']
 
 
 @init
@@ -41,6 +43,11 @@ def set_properties(project):
     project.set_property("flake8_break_build", True)
     project.set_property("flake8_exclude_patterns",
                          ".git, .idea, target, venv, setup.py, build.py")
+
+    # Docs
+    project.set_property("sphinx_config_path", "docs/source")
+    project.set_property("sphinx_source_dir", "docs/source")
+    project.set_property("sphinx_output_dir", "docs/_build")
 
     # Project
     project.version = "0.0.1-alpha"
