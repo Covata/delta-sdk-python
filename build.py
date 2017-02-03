@@ -45,8 +45,8 @@ def set_properties(project):
 
     # Docs
     project.depends_on("sphinx-rtd-theme", "0.1.9")
-    project.set_property("sphinx_config_path", "docs/source")
-    project.set_property("sphinx_source_dir", "docs/source")
+    project.set_property("sphinx_config_path", "docs")
+    project.set_property("sphinx_source_dir", "docs")
     project.set_property("sphinx_output_dir", "docs/_build")
 
     # Project
