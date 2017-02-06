@@ -12,7 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from interface import ApiClient
+from api_client import ApiClient
 import requests
 import json
 
