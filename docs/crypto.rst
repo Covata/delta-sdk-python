@@ -12,23 +12,14 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-API Client
-==========
 
-.. currentmodule:: covata.delta.api
-
-The Delta API Client is an abstraction over the Delta API for execution of
-requests and responses.
+CryptoService
+=============
 
 
-.. autoclass:: ApiClient
-   :members:
+.. currentmodule:: covata.delta.crypto
 
-RequestsApiClient
------------------
+The Delta Crypto Service provides functionality for client side cryptography.
 
-The implementation of ``ApiClient`` interface using ``Requests``.
-
-.. autoclass:: RequestsApiClient
-   :show-inheritance:
-   :members:
+.. autoclass:: CryptoService
+    :members:

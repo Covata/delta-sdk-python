@@ -27,11 +27,17 @@ use_plugin('python.pycharm')
 name = "delta-sdk-python"
 default_task = ['install_dependencies', 'analyze', 'publish']
 
+BUILD_DEPENDENCIES = [
+    "pytest-mock",
+    "pytest-cov",
+    "responses"
+]
 
 @init
 def set_properties(project):
     # Tests
-    project.depends_on("pytest-cov", "2.4.0")
+    for dep in BUILD_DEPENDENCIES:
+        project.build_depends_on(dep)
     project.set_property("dir_source_pytest_python", "src/unittest/python")
     project.set_property("unittest_module_glob", "test_*")
 

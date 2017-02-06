@@ -27,6 +27,7 @@ Welcome to Covata Delta Python SDK's documentation!
 
     get_started
     api
+    crypto
 
 Indices and tables
 ==================
