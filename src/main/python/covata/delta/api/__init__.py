@@ -12,7 +12,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from api_client import ApiClient
-from requests_client import RequestsApiClient
+from __future__ import absolute_import
+
+from .api_client import ApiClient
+from .requests_client import RequestsApiClient
 
 __all__ = ['ApiClient', 'RequestsApiClient']
