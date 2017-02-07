@@ -17,7 +17,7 @@ import uuid
 
 import responses
 
-from covata.delta.api import ApiClient
+from covata.delta.api import ApiClient, RequestsApiClient
 
 
 @responses.activate
@@ -31,6 +31,6 @@ def test_register_identity(mocker, crypto_service, private_key):
 
     mocker.patch.object(crypto_service, 'generate_key', return_value=private_key)
 
-    api_client = ApiClient(crypto_service)
+    api_client = RequestsApiClient(crypto_service)
     identity_id = api_client.register_identity("1", {})
     assert identity_id == expected_id
