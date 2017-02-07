@@ -38,15 +38,7 @@ def test_should_serialize_public_key_to_b64_encoded_der_format(
 
 
 def test_should_decrypt_private_key(crypto_service, private_key, mock_file):
-    retrieved = as_string(crypto_service.read_from_file("mock.pem"))
-    expected = as_string(private_key)
-    mock_file.assert_called_once_with(
-        os.path.join(crypto_service.key_store_path, "mock.pem"), 'r')
-    assert retrieved == expected
-
-
-def test_should_decrypt_private_key(mock_file, crypto_service, private_key):
-    retrieved = as_string(crypto_service.read_from_file("mock.pem"))
+    retrieved = as_string(crypto_service.load("mock.pem"))
     expected = as_string(private_key)
     mock_file.assert_called_once_with(
         os.path.join(crypto_service.key_store_path, "mock.pem"), 'r')
@@ -56,7 +48,7 @@ def test_should_decrypt_private_key(mock_file, crypto_service, private_key):
 def test_should_encrypt_to_file(mocker, crypto_service, private_key, mock_file):
     mock_makedirs = mocker.patch('os.makedirs')
     mocker.patch('os.path.isdir', return_value=False)
-    crypto_service.write_to_file(private_key, "mock.pem")
+    crypto_service.save(private_key, "mock.pem")
     mock_file.assert_called_once_with(
         os.path.join(crypto_service.key_store_path, "mock.pem"), 'w')
     mock_makedirs.assert_called_once_with(crypto_service.key_store_path)

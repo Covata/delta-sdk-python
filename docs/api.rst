@@ -27,7 +27,7 @@ requests and responses.
 RequestsApiClient
 -----------------
 
-The implementation of ``ApiClient`` interface using ``Requests``.
+An implementation of ``ApiClient`` abstract base class using ``Requests``.
 
 .. autoclass:: RequestsApiClient
    :show-inheritance:
