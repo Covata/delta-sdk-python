@@ -13,4 +13,4 @@ Covata Delta provides an easy to use framework for sharing secrets across networ
 
 ## License
 
-Copyright 2016 Covata Limited or its affiliates - Released under the [Apache 2.0 license](http://www.apache.org/licenses/LICENSE-2.0.html).
+Copyright 2017 Covata Limited or its affiliates - Released under the [Apache 2.0 license](http://www.apache.org/licenses/LICENSE-2.0.html).

@@ -4,7 +4,8 @@ python:
   - 3.3
   - 3.5
 install:
-  - pip install pytest pytest-cov pybuilder coveralls
+  - pip install pytest==3.0.6
+  - pip install pytest-cov pybuilder coveralls pytest-mock mock responses
 script:
   pyb
 after_success:

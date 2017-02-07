@@ -1,4 +1,4 @@
-.. Copyright 2016 Covata Limited or its affiliates
+.. Copyright 2017 Covata Limited or its affiliates
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ Welcome to Covata Delta Python SDK's documentation!
 
     get_started
     api
+    crypto
 
 Indices and tables
 ==================

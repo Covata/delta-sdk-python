@@ -1,4 +1,4 @@
-#   Copyright 2016 Covata Limited or its affiliates
+#   Copyright 2017 Covata Limited or its affiliates
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -99,6 +99,7 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+autoclass_content = 'both'
 
 # -- Options for HTML output ----------------------------------------------
 
