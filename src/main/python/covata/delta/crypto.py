@@ -59,7 +59,7 @@ class CryptoService:
         file_path = os.path.join(self.key_store_path, file_name)
         with(open(file_path, 'r')) as f:
             return serialization \
-                .load_pem_private_key(f.read(),
+                .load_pem_private_key(f.read().encode('utf-8'),
                                       password=self.key_store_passphrase,
                                       backend=default_backend())
 
