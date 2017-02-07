@@ -34,7 +34,7 @@ def test_should_serialize_public_key_to_b64_encoded_der_format(
         encoding=serialization.Encoding.DER,
         format=serialization.PublicFormat.PKCS1))
 
-    assert crypto_service.serialized(public_key) == expected
+    assert crypto_service.serialized(public_key) == str(expected)
 
 
 def test_should_decrypt_private_key(crypto_service, private_key, mock_file):

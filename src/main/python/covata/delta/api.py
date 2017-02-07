@@ -75,7 +75,7 @@ class RequestsApiClient(ApiClient):
             url=self.DELTA_URL + self.RESOURCE_IDENTITIES,
             json=dict((k, v) for k, v in body.items() if v is not None))
 
-        identity_id = json.loads(response.content)['identityId']
+        identity_id = json.loads(response.text)['identityId']
 
         crypto.save(signing_private_key, identity_id + ".signing.pem")
         crypto.save(crypto_private_key, identity_id + ".crypto.pem")
