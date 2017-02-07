@@ -19,8 +19,6 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 
-from mock import mock_open
-
 import covata.delta.crypto as crypto
 
 
@@ -43,15 +41,16 @@ def private_key():
                                     backend=default_backend())
 
 
-@pytest.fixture(scope="function")
-def mock_file(mocker, crypto_service, private_key):
-    mock_pem_file = private_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.BestAvailableEncryption(
-            crypto_service.key_store_passphrase))
-    mocker.patch('os.path.isdir', return_value=True)
-    return mocker.patch(
-        'covata.delta.crypto.open',
-        mock_open(read_data=mock_pem_file),
-        create=True)
+@pytest.fixture(scope="session")
+def key2bytes():
+    def convert(key):
+        if isinstance(key, rsa.RSAPrivateKey):
+            return key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption())
+        elif isinstance(key, rsa.RSAPublicKey):
+            return key.public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.PKCS1)
+    return convert

@@ -13,7 +13,6 @@
 #   limitations under the License.
 
 import base64
-import os
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -32,30 +31,22 @@ def test_should_serialize_public_key_to_b64_encoded_der_format(
 
     expected = base64.b64encode(public_key.public_bytes(
         encoding=serialization.Encoding.DER,
-        format=serialization.PublicFormat.PKCS1))
+        format=serialization.PublicFormat.PKCS1))  # type: bytes
 
-    assert crypto_service.serialized(public_key) == str(expected)
+    assert crypto_service.serialized(public_key) == expected.decode()
 
 
-def test_should_decrypt_private_key(crypto_service, private_key, mock_file):
-    retrieved = as_string(crypto_service.load("mock.pem"))
-    expected = as_string(private_key)
-    mock_file.assert_called_once_with(
-        os.path.join(crypto_service.key_store_path, "mock.pem"), 'r')
+def test_should_decrypt_private_key(crypto_service, private_key, key2bytes):
+    crypto_service.save(private_key, "mock.pem")
+    retrieved = key2bytes(crypto_service.load("mock.pem"))
+    expected = key2bytes(private_key)
     assert retrieved == expected
 
 
-def test_should_encrypt_to_file(mocker, crypto_service, private_key, mock_file):
+def test_should_encrypt_to_file(mocker, crypto_service, private_key):
     mock_makedirs = mocker.patch('os.makedirs')
     mocker.patch('os.path.isdir', return_value=False)
     crypto_service.save(private_key, "mock.pem")
-    mock_file.assert_called_once_with(
-        os.path.join(crypto_service.key_store_path, "mock.pem"), 'w')
     mock_makedirs.assert_called_once_with(crypto_service.key_store_path)
 
 
-def as_string(private_key):
-    return private_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption())

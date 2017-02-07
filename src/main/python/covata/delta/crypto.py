@@ -47,7 +47,7 @@ class CryptoService:
             os.makedirs(self.key_store_path)
 
         with open(file_path, 'w') as f:
-            f.write(pem)
+            f.write(pem.decode(encoding='utf8'))
 
     def load(self, file_name):
         # type: (str) -> rsa.RSAPrivateKey
@@ -81,7 +81,7 @@ class CryptoService:
 
     @staticmethod
     def serialized(public_key):
-        # type: (rsa.RSAPublicKey) -> str
+        # type: (rsa.RSAPublicKey) -> unicode
         """
 
         :param :class:`RSAPublicKey` public_key: the public Key object
@@ -90,4 +90,4 @@ class CryptoService:
         """
         der = public_key.public_bytes(encoding=serialization.Encoding.DER,
                                       format=serialization.PublicFormat.PKCS1)
-        return str(base64.b64encode(der))
+        return base64.b64encode(der).decode(encoding='utf8')

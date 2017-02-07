@@ -12,7 +12,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import json
 import uuid
 
 import responses
@@ -21,16 +20,19 @@ from covata.delta.api import ApiClient, RequestsApiClient
 
 
 @responses.activate
-def test_register_identity(mocker, crypto_service, private_key):
+def test_register_identity(mocker, crypto_service, private_key, key2bytes):
     expected_id = str(uuid.uuid4())
     responses.add(responses.POST,
                   ApiClient.DELTA_URL + ApiClient.RESOURCE_IDENTITIES,
                   status=201,
-                  body=json.dumps(dict(identityId=expected_id)),
-                  content_type='application/json')
+                  json=dict(identityId=expected_id))
 
     mocker.patch.object(crypto_service, 'generate_key', return_value=private_key)
 
     api_client = RequestsApiClient(crypto_service)
     identity_id = api_client.register_identity("1", {})
+    crypto_key = crypto_service.load("%s.crypto.pem" % identity_id)
+    signing_key = crypto_service.load("%s.signing.pem" % identity_id)
     assert identity_id == expected_id
+    assert key2bytes(crypto_key) == key2bytes(private_key)
+    assert key2bytes(signing_key) == key2bytes(private_key)
