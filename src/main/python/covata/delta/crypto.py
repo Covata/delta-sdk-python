@@ -1,4 +1,4 @@
-#   Copyright 2016 Covata Limited or its affiliates
+#   Copyright 2017 Covata Limited or its affiliates
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -63,31 +63,31 @@ class CryptoService:
                                       password=self.key_store_passphrase,
                                       backend=default_backend())
 
-    @staticmethod
-    def generate_key():
-        # type: () -> rsa.RSAPrivateKey
-        """
-        Generates an RSA private key object. The public key object can be
-        extracted by calling public_key() method on the generated key object.
 
-        >>> private_key = CryptoService.generate_key() # generate a private key
-        >>> public_key = private_key.public_key() # get associated public key
+def generate_key():
+    # type: () -> rsa.RSAPrivateKey
+    """
+    Generates an RSA private key object. The public key object can be
+    extracted by calling public_key() method on the generated key object.
 
-        :return: the generated private key
-        """
-        return rsa.generate_private_key(public_exponent=65537,
-                                        key_size=4096,
-                                        backend=default_backend())
+    >>> private_key = CryptoService.generate_key() # generate a private key
+    >>> public_key = private_key.public_key() # get associated public key
 
-    @staticmethod
-    def serialized(public_key):
-        # type: (rsa.RSAPublicKey) -> unicode
-        """
+    :return: the generated private key
+    """
+    return rsa.generate_private_key(public_exponent=65537,
+                                    key_size=4096,
+                                    backend=default_backend())
 
-        :param :class:`RSAPublicKey` public_key: the public Key object
-        :return: the key as base64 encoded string
 
-        """
-        der = public_key.public_bytes(encoding=serialization.Encoding.DER,
-                                      format=serialization.PublicFormat.PKCS1)
-        return base64.b64encode(der).decode(encoding='utf8')
+def serialized(public_key):
+    # type: (rsa.RSAPublicKey) -> unicode
+    """
+
+    :param :class:`RSAPublicKey` public_key: the public Key object
+    :return: the key as base64 encoded string
+
+    """
+    der = public_key.public_bytes(encoding=serialization.Encoding.DER,
+                                  format=serialization.PublicFormat.PKCS1)
+    return base64.b64encode(der).decode(encoding='utf8')
