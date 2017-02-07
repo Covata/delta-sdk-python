@@ -90,4 +90,4 @@ class CryptoService:
         """
         der = public_key.public_bytes(encoding=serialization.Encoding.DER,
                                       format=serialization.PublicFormat.PKCS1)
-        return base64.b64encode(der)
+        return str(base64.b64encode(der))
