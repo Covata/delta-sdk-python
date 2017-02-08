@@ -12,6 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import absolute_import
 
 import base64
 import os
@@ -19,9 +20,10 @@ import os
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from covata.delta.util import LogMixin
 
 
-class CryptoService:
+class CryptoService(LogMixin):
     def __init__(self,
                  key_store_path,
                  key_store_passphrase):
@@ -33,20 +35,22 @@ class CryptoService:
         :param str key_store_passphrase: the passphrase to decrypt the keys
         """
         self.key_store_path = os.path.expanduser(key_store_path)
-        self.key_store_passphrase = key_store_passphrase
+        self.__key_store_passphrase = key_store_passphrase
 
     def save(self, private_key, file_name):
         # type: (rsa.RSAPrivateKey, str) -> None
         pem = private_key.private_bytes(
             serialization.Encoding.PEM,
             serialization.PrivateFormat.PKCS8,
-            serialization.BestAvailableEncryption(self.key_store_passphrase))
+            serialization.BestAvailableEncryption(self.__key_store_passphrase))
 
         file_path = os.path.join(self.key_store_path, file_name)
         if not os.path.isdir(self.key_store_path):
+            self.logger.debug("creating directory %s", self.key_store_path)
             os.makedirs(self.key_store_path)
 
         with open(file_path, 'w') as f:
+            self.logger.debug("Saving %s", file_name)
             f.write(pem.decode(encoding='utf8'))
 
     def load(self, file_name):
@@ -58,9 +62,10 @@ class CryptoService:
         """
         file_path = os.path.join(self.key_store_path, file_name)
         with(open(file_path, 'r')) as f:
+            self.logger.debug("Loading %s", file_name)
             return serialization \
                 .load_pem_private_key(f.read().encode('utf-8'),
-                                      password=self.key_store_passphrase,
+                                      password=self.__key_store_passphrase,
                                       backend=default_backend())
 
     @staticmethod

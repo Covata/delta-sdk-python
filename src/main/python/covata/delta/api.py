@@ -16,15 +16,17 @@ from __future__ import absolute_import
 
 import json
 from abc import ABCMeta, abstractmethod
-import six
 
 import requests
+import six
+
+from covata.delta.util import LogMixin
 
 
 @six.add_metaclass(ABCMeta)
 class ApiClient(object):
 
-    DELTA_URL = 'https://delta.covata.cc/master'    # type: str
+    DELTA_URL = 'https://delta.covata.io/v1'        # type: str
     RESOURCE_IDENTITIES = '/identities'             # type: str
 
     def __init__(self, crypto_service):
@@ -35,7 +37,7 @@ class ApiClient(object):
         :param crypto_service: the CryptoService object
         :type crypto_service: :class:`~covata.delta.crypto.CryptoService`
         """
-        self.crypto_service = crypto_service
+        self._crypto_service = crypto_service
 
     @abstractmethod
     def register_identity(self, external_id=None, metadata=None):
@@ -56,9 +58,9 @@ class ApiClient(object):
         """
 
 
-class RequestsApiClient(ApiClient):
+class RequestsApiClient(ApiClient, LogMixin):
     def register_identity(self, external_id=None, metadata=None):
-        crypto = self.crypto_service
+        crypto = self._crypto_service
         signing_private_key = crypto.generate_key()
         crypto_private_key = crypto.generate_key()
 
