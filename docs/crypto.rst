@@ -13,13 +13,21 @@
    limitations under the License.
 
 
-CryptoService
-=============
+Client-Side Cryptography
+========================
 
+CryptoService
+-------------
 
 .. currentmodule:: covata.delta.crypto
 
 The Delta Crypto Service provides functionality for client side cryptography.
 
 .. autoclass:: CryptoService
+    :members:
+
+CVT1 Request Signer
+-------------------
+
+.. autoclass:: CVTSigner
     :members:

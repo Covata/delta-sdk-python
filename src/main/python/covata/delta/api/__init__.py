@@ -12,12 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import logging
+from __future__ import absolute_import
+from .apiclient import ApiClient
+from .requestsclient import RequestsApiClient
 
-__all__ = ["LogMixin"]
-
-
-class LogMixin(object):
-    @property
-    def logger(self):
-        return logging.getLogger(self.__class__.__name__)
+__all__ = ["ApiClient", "RequestsApiClient"]

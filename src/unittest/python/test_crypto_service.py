@@ -31,7 +31,7 @@ def test_should_serialize_public_key_to_b64_encoded_der_format(
 
     expected = base64.b64encode(public_key.public_bytes(
         encoding=serialization.Encoding.DER,
-        format=serialization.PublicFormat.PKCS1))  # type: bytes
+        format=serialization.PublicFormat.SubjectPublicKeyInfo))  # type: bytes
 
     assert crypto_service.serialized(public_key) == expected.decode()
 

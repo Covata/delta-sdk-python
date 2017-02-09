@@ -18,9 +18,12 @@ import base64
 import os
 
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-from covata.delta.util import LogMixin
+
+from ..util import LogMixin
+from .signer import CVTSigner
 
 
 class CryptoService(LogMixin):
@@ -38,6 +41,22 @@ class CryptoService(LogMixin):
         self.__key_store_passphrase = key_store_passphrase
 
     def save(self, private_key, file_name):
+        """
+        Saves a private key object (encrypted) to keystore
+
+        Saving the Private Cryptographic Key
+
+        >>> crypto_service.save(private_key, identity_id + ".crypto.pem")
+
+        Saving the Private Signing Key:
+
+        >>> crypto_service.save(private_key, identity_id + ".signing.pem")
+
+
+        :param private_key: the private key object
+        :type private_key: :class:`RSAPrivateKey`
+        :param str file_name: the name of the .pem file to be written
+        """
         # type: (rsa.RSAPrivateKey, str) -> None
         pem = private_key.private_bytes(
             serialization.Encoding.PEM,
@@ -56,9 +75,18 @@ class CryptoService(LogMixin):
     def load(self, file_name):
         # type: (str) -> rsa.RSAPrivateKey
         """
+        Loads a private key instance from an encrypted .pem file in the keystore
 
-        :param file_name:
-        :return:
+        Loading the Private Cryptographic Key:
+
+        >>> private_key = crypto_service.load(identity_id + ".crypto.pem")
+
+        Loading the Private Signing Key:
+
+        >>> private_key = crypto_service.load(identity_id + ".signing.pem")
+
+        :param str file_name: the name of the .pem file to be loaded
+        :return: the private key object
         """
         file_path = os.path.join(self.key_store_path, file_name)
         with(open(file_path, 'r')) as f:
@@ -78,7 +106,7 @@ class CryptoService(LogMixin):
         >>> private_key = CryptoService.generate_key() # generate a private key
         >>> public_key = private_key.public_key() # get associated public key
 
-        :return: the generated private key
+        :return: the generated private key object
         """
         return rsa.generate_private_key(public_exponent=65537,
                                         key_size=4096,
@@ -89,10 +117,41 @@ class CryptoService(LogMixin):
         # type: (rsa.RSAPublicKey) -> unicode
         """
 
-        :param :class:`RSAPublicKey` public_key: the public Key object
+        :param public_key: the public Key object
+        :type public_key: :class:`RSAPublicKey`
         :return: the key as base64 encoded string
 
         """
-        der = public_key.public_bytes(encoding=serialization.Encoding.DER,
-                                      format=serialization.PublicFormat.PKCS1)
-        return base64.b64encode(der).decode(encoding='utf8')
+        der = public_key.public_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo)
+        return base64.b64encode(der).decode(encoding='utf-8')
+
+    @staticmethod
+    def sha256hex(payload):
+        """
+        Calculate the SHA256 hex digest of the given payload
+
+        :param str payload: the payload to be calculated
+        :return: SHA256 hex digest
+        :rtype: bytes
+        """
+        # type: (str) -> bytes
+        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+        digest.update(payload)
+        x = digest.finalize()  # type: bytes
+        return x.encode('hex')
+
+    def signer(self, identity_id):
+        # type: (str) -> CVTSigner
+        """
+        Instantiate a new :class:`~.CVTSigner` for the authorizing identity
+        using this :class:`~.CryptoService`.
+
+        >>> signer = crypto_service.signer(authorizing_identity)
+
+        :param str identity_id: the authorizing identity id
+        :return: the CVTSigner object
+        :rtype: :class:`~covata.delta.crypto.CVTSigner`
+        """
+        return CVTSigner(self, identity_id)
