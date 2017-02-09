@@ -21,6 +21,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from binascii import hexlify
 
 from ..util import LogMixin
 from .signer import CVTSigner
@@ -140,7 +141,7 @@ class CryptoService(LogMixin):
         digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
         digest.update(payload if payload is bytes else payload.encode('utf-8'))
         x = digest.finalize()  # type: bytes
-        return x.encode('hex')
+        return hexlify(x)
 
     def signer(self, identity_id):
         # type: (str) -> CVTSigner
