@@ -16,16 +16,17 @@ import base64
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+import requests
 
 
-def test_should_generate_key_pairs(crypto_service):
+def test_generate_key_pairs(crypto_service):
     private_key = crypto_service.generate_key()
     assert isinstance(private_key, rsa.RSAPrivateKey)
     public_key = private_key.public_key()
     assert isinstance(public_key, rsa.RSAPublicKey)
 
 
-def test_should_serialize_public_key_to_b64_encoded_der_format(
+def test_serialize_public_key_to_b64_encoded_der_subject_public_key_info_format(
         crypto_service, private_key):
     public_key = private_key.public_key()
 
@@ -36,17 +37,32 @@ def test_should_serialize_public_key_to_b64_encoded_der_format(
     assert crypto_service.serialized(public_key) == expected.decode()
 
 
-def test_should_decrypt_private_key(crypto_service, private_key, key2bytes):
+def test_decrypt_private_key(crypto_service, private_key, key2bytes):
     crypto_service.save(private_key, "mock.pem")
     retrieved = key2bytes(crypto_service.load("mock.pem"))
     expected = key2bytes(private_key)
     assert retrieved == expected
 
 
-def test_should_encrypt_to_file(mocker, crypto_service, private_key):
+def test_encrypt_to_file(mocker, crypto_service, private_key):
     mock_makedirs = mocker.patch('os.makedirs')
     mocker.patch('os.path.isdir', return_value=False)
     crypto_service.save(private_key, "mock.pem")
     mock_makedirs.assert_called_once_with(crypto_service.key_store_path)
 
 
+def test_compute_sha256_hex_digest(crypto_service):
+    assert crypto_service.sha256hex("test") == \
+           b"9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+
+
+def test_construct_signer(mocker, crypto_service, private_key):
+    load = mocker.patch.object(crypto_service, 'load', return_value=private_key)
+    signer = crypto_service.signer("mock")
+
+    r = requests.Request(url='https://test.com/stage/resource',
+                         method='POST',
+                         headers=dict(someKey="some value"),
+                         json=dict(content="abcd"))
+    signer(r.prepare())
+    load.assert_called_once_with("mock.signing.pem")

@@ -17,7 +17,7 @@ from __future__ import absolute_import
 import requests
 
 from covata.delta.util import LogMixin
-from covata.delta.api.apiclient import ApiClient
+from covata.delta.api import ApiClient
 
 
 class RequestsApiClient(ApiClient, LogMixin):

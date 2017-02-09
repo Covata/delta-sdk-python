@@ -20,6 +20,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 
 import covata.delta.crypto as crypto
+import covata.delta.api as api
 
 
 @pytest.yield_fixture(scope="session")
@@ -54,3 +55,14 @@ def key2bytes():
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PublicFormat.PKCS1)
     return convert
+
+
+@pytest.fixture(scope="function")
+def mock_signer(mocker, crypto_service):
+    return mocker.patch.object(crypto_service, "signer",
+                               return_value=mocker.Mock())
+
+
+@pytest.fixture(scope="session")
+def api_client(crypto_service):
+    return api.RequestsApiClient(crypto_service)
