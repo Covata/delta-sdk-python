@@ -138,7 +138,7 @@ class CryptoService(LogMixin):
         """
         # type: (str) -> bytes
         digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-        digest.update(payload)
+        digest.update(payload if payload is bytes else payload.encode('utf-8'))
         x = digest.finalize()  # type: bytes
         return x.encode('hex')
 
