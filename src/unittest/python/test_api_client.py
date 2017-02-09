@@ -28,8 +28,7 @@ def test_register_identity(mocker, api_client, crypto_service, private_key,
                   status=201,
                   json=dict(identityId=expected_id))
 
-    mocker.patch.object(crypto_service, 'generate_key',
-                        return_value=private_key)
+    mocker.patch.object(crypto_service, 'generate_key', return_value=private_key)
 
     identity_id = api_client.register_identity("1", {})
     crypto_key = crypto_service.load("%s.crypto.pem" % identity_id)
@@ -60,4 +59,4 @@ def test_get_identity(api_client, mock_signer):
 
     mock_signer.assert_called_once_with("requestor_id")
 
-    print response == expected_json
+    assert response == expected_json
