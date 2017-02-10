@@ -27,11 +27,11 @@ class LogMixin(object):
         """
         Gets the name of the caller in {package}.{module}.{class} format
 
-        :return: the
+        :return: the name of the caller
         """
         # type: () -> str
         stack = inspect.stack()
-        if len(stack) < 2:
+        if len(stack) < 3:
             return ''
 
         caller_frame = stack[2][0]
