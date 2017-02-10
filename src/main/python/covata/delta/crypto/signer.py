@@ -73,7 +73,7 @@ class CVTSigner(AuthBase, LogMixin):
 
         >>> signer = crypto_service.signer(authorizing_identity)
 
-        Example usage for getting an identity:
+        Example usage for retrieving an identity:
 
         >>> api_client = RequestsApiClient(crypto_service)
         >>> response = requests.get(

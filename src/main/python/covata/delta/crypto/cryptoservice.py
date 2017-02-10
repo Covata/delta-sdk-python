@@ -122,8 +122,8 @@ class CryptoService(LogMixin):
     def serialized(public_key):
         # type: (rsa.RSAPublicKey) -> unicode
         """
-        Serialize the provided public key object as base-64-encoded DER format
-        using X.509 SubjectPublicKeyInfo with PKCS1
+        Serializes the provided public key object as base-64-encoded DER format
+        using X.509 SubjectPublicKeyInfo with PKCS1.
 
         :param public_key: the public Key object
         :type public_key: :class:`RSAPublicKey`
@@ -138,7 +138,7 @@ class CryptoService(LogMixin):
     @staticmethod
     def sha256hex(payload):
         """
-        Calculate the SHA256 hex digest of the given payload
+        Calculates the SHA256 hex digest of the given payload.
 
         :param str payload: the payload to be calculated
         :return: SHA256 hex digest
@@ -153,7 +153,7 @@ class CryptoService(LogMixin):
     def signer(self, identity_id):
         # type: (str) -> CVTSigner
         """
-        Instantiate a new :class:`~.CVTSigner` for the authorizing identity
+        Instantiates a new :class:`~.CVTSigner` for the authorizing identity
         using this :class:`~.CryptoService`.
 
         >>> signer = crypto_service.signer(authorizing_identity)
