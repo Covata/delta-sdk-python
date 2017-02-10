@@ -117,11 +117,13 @@ class CryptoService(LogMixin):
     def serialized(public_key):
         # type: (rsa.RSAPublicKey) -> unicode
         """
+        Serialize the provided public key object as base-64-encoded DER format
+        using X.509 SubjectPublicKeyInfo with PKCS1
 
         :param public_key: the public Key object
         :type public_key: :class:`RSAPublicKey`
-        :return: the key as base64 encoded string
-
+        :return: the key as base64 encoded unicode string
+        :rtype: str
         """
         der = public_key.public_bytes(
             encoding=serialization.Encoding.DER,
