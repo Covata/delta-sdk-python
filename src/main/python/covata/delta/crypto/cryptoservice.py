@@ -43,7 +43,7 @@ class CryptoService(LogMixin):
 
     def save(self, private_key, file_name):
         """
-        Saves a private key object (encrypted) to keystore
+        Saves a private key object (encrypted) to keystore.
 
         Saving the Private Cryptographic Key:
 
@@ -81,7 +81,8 @@ class CryptoService(LogMixin):
     def load(self, file_name):
         # type: (str) -> rsa.RSAPrivateKey
         """
-        Loads a private key instance from an encrypted .pem file in the keystore
+        Loads a private key instance from an encrypted .pem file
+        in the keystore.
 
         Loading the Private Cryptographic Key:
 
