@@ -38,7 +38,7 @@ class SignatureMaterial(namedtuple('SignatureMaterial', [
     'hashed_payload'
 ])):
     def __init__(self, *args, **kwargs):
-        super(SignatureMaterial, self).__init__(*args, **kwargs)
+        super(SignatureMaterial, self).__init__()
         self.__canonical_request = "\n".join([
             self.method,
             self.uri,
@@ -107,10 +107,10 @@ class CVTSigner(AuthBase, LogMixin):
         string_to_sign = "\n".join([
             self.SIGNING_ALGORITHM,
             self.__request_date,
-            self.__crypto_service.sha256hex(canonical_request)])
+            self.__crypto_service.sha256hex(canonical_request).decode('utf-8')])
 
         self.logger.debug(string_to_sign)
-        signature = b64encode(self.__sign(string_to_sign))
+        signature = b64encode(self.__sign(string_to_sign)).decode('utf-8')
 
         auth_header = "{algorithm} Identity={identity_id}, " \
                       "SignedHeaders={signed_headers}, Signature={signature}" \
@@ -134,7 +134,7 @@ class CVTSigner(AuthBase, LogMixin):
     def __get_hashed_payload(self, payload):
         sorted_payload = "{}" if payload is None else json.dumps(
             json.loads(payload), separators=(',', ':'), sort_keys=True)
-        return self.__crypto_service.sha256hex(sorted_payload)
+        return self.__crypto_service.sha256hex(sorted_payload).decode('utf-8')
 
     def __get_materials(self, request):
         # type: (PreparedRequest) -> SignatureMaterial
