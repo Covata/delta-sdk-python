@@ -59,7 +59,8 @@ class CVTSigner(AuthBase, LogMixin):
 
     def __init__(self, crypto_service, identity_id):
         """
-        Create a Request Signer object to sign a ``Request`` object using
+        Create a Request Signer object to sign a
+        :class:`~requests.Request` object using
         the CVT1 request signing scheme.
 
         The :class:`~.CVTSigner` can be instantiated
@@ -81,9 +82,14 @@ class CVTSigner(AuthBase, LogMixin):
         ...         base_url="https://delta.covata.io/v1",
         ...         resource="/identities/",
         ...         identity_id="e5fa4059-24c0-42a8-af9a-fe7280b43256"),
-        ...     auth=self._crypto_service.signer(requestor_id))
+        ...     auth=crypto_service.signer(requestor_id))
         >>> print(response.json())
 
+        It is also possible to invoke the call to manually attach
+        the appropriate headers to a :class:`~requests.PreparedRequest` object:
+
+        >>> prepared_request = request.prepare()
+        >>> signer(prepared_request)
 
         :param crypto_service: The Crypto Service object
         :type crypto_service: :class:`~covata.delta.crypto.CryptoService`

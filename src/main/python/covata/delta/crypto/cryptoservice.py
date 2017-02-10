@@ -45,7 +45,7 @@ class CryptoService(LogMixin):
         """
         Saves a private key object (encrypted) to keystore
 
-        Saving the Private Cryptographic Key
+        Saving the Private Cryptographic Key:
 
         >>> crypto_service.save(private_key, identity_id + ".crypto.pem")
 
