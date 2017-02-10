@@ -132,8 +132,11 @@ class CVTSigner(AuthBase, LogMixin):
                                 hashes.SHA256())
 
     def __get_hashed_payload(self, payload):
+        # type: (bytes) -> unicode
         sorted_payload = "{}" if payload is None else json.dumps(
-            json.loads(payload), separators=(',', ':'), sort_keys=True)
+            json.loads(payload.decode('utf-8')),
+            separators=(',', ':'),
+            sort_keys=True)
         return self.__crypto_service.sha256hex(sorted_payload).decode('utf-8')
 
     def __get_materials(self, request):
