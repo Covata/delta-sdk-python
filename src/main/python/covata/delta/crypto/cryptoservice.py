@@ -53,7 +53,6 @@ class CryptoService(LogMixin):
 
         >>> crypto_service.save(private_key, identity_id + ".signing.pem")
 
-
         :param private_key: the private key object
         :type private_key: :class:`RSAPrivateKey`
         :param str file_name: the name of the .pem file to be written
@@ -68,6 +67,12 @@ class CryptoService(LogMixin):
         if not os.path.isdir(self.key_store_path):
             self.logger.debug("creating directory %s", self.key_store_path)
             os.makedirs(self.key_store_path)
+
+        if os.path.isfile(file_path):
+            msg = "Save failed: A key with name [{}] exists in keystore".format(
+                file_name)
+            self.logger.error(msg)
+            raise IOError(msg)
 
         with open(file_path, 'w') as f:
             self.logger.debug("Saving %s", file_name)

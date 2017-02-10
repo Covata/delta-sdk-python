@@ -59,16 +59,15 @@ class CVTSigner(AuthBase, LogMixin):
 
     def __init__(self, crypto_service, identity_id):
         """
-        Create a Request Signer object to sign a
-        :class:`~requests.Request` object using
-        the CVT1 request signing scheme.
+        Creates a Request Signer object to sign a :class:`~requests.Request`
+        object using the CVT1 request signing scheme.
 
-        The :class:`~.CVTSigner` can be instantiated
-        directly using its constructor:
+        The :class:`~.CVTSigner` can be instantiated directly using its
+        constructor:
 
         >>> signer = CVTSigner(crypto_service, authorizing_identity)
 
-        The :class:`~.CVTSigner` can also be instantiated indirectly via a
+        It can also be instantiated indirectly via a
         :class:`~.CryptoService` object by calling
         :func:`~covata.delta.crypto.CryptoService.signer`:
 
@@ -85,8 +84,9 @@ class CVTSigner(AuthBase, LogMixin):
         ...     auth=crypto_service.signer(requestor_id))
         >>> print(response.json())
 
-        It is also possible to invoke the call to manually attach
-        the appropriate headers to a :class:`~requests.PreparedRequest` object:
+        It is also possible to invoke the :func:`~.CVTSigner.__call__`
+        manually to attach the appropriate headers to a
+        :class:`~requests.PreparedRequest` object:
 
         >>> prepared_request = request.prepare()
         >>> signer(prepared_request)
@@ -118,16 +118,12 @@ class CVTSigner(AuthBase, LogMixin):
         self.logger.debug(string_to_sign)
         signature = b64encode(self.__sign(string_to_sign)).decode('utf-8')
 
-        auth_header = "{algorithm} Identity={identity_id}, " \
-                      "SignedHeaders={signed_headers}, Signature={signature}" \
+        return "{algorithm} Identity={identity_id}, " \
+               "SignedHeaders={signed_headers}, Signature={signature}" \
             .format(algorithm=self.SIGNING_ALGORITHM,
                     identity_id=self.__identity_id,
                     signed_headers=signature_materials.signed_headers,
                     signature=signature)
-
-        self.logger.debug(auth_header)
-
-        return auth_header
 
     def __sign(self, string_to_sign):
         private_key = self.__crypto_service.load(
@@ -147,13 +143,6 @@ class CVTSigner(AuthBase, LogMixin):
 
     def __get_materials(self, request):
         # type: (PreparedRequest) -> SignatureMaterial
-        """
-        prepare the signature materials needed
-
-        :param request: the prepared request by
-        :return: the SignatureMaterial named tuple
-        :rtype: :class: `SignatureMaterial`
-        """
         # /master/identities/a123?key=an+arbitrary+value&key2=x
         path = request.path_url.split("?")
         uri = self.__encode_uri("/".join(path[0].split("/")[2:]))

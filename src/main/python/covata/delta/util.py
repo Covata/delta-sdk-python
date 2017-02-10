@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 import logging
+import inspect
 
 __all__ = ["LogMixin"]
 
@@ -20,4 +21,24 @@ __all__ = ["LogMixin"]
 class LogMixin(object):
     @property
     def logger(self):
-        return logging.getLogger(self.__class__.__name__)
+        return logging.getLogger(self.__caller())
+
+    def __caller(self):
+        """
+        Gets the name of the caller in {package}.{module}.{class} format
+
+        :return: the
+        """
+        # type: () -> str
+        stack = inspect.stack()
+        if len(stack) < 2:
+            return ''
+
+        caller_frame = stack[2][0]
+        module = inspect.getmodule(caller_frame)
+        name = filter(lambda x: x is not None, [
+            module.__name__ if module else None,
+            self.__class__.__name__])
+
+        del caller_frame
+        return ".".join(name)

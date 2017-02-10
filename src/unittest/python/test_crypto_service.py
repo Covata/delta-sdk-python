@@ -14,9 +14,10 @@
 
 import base64
 
+import pytest
+import requests
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-import requests
 
 
 def test_generate_key_pairs(crypto_service):
@@ -66,3 +67,11 @@ def test_construct_signer(mocker, crypto_service, private_key):
                          json=dict(content="abcd"))
     signer(r.prepare())
     load.assert_called_once_with("mock.signing.pem")
+
+
+def test_save__should__fail_when_key_exists(crypto_service, private_key):
+    crypto_service.save(private_key, "mock.pem")
+    with pytest.raises(IOError) as excinfo:
+        crypto_service.save(private_key, "mock.pem")
+    expected = "Save failed: A key with name [mock.pem] exists in keystore"
+    assert expected in str(excinfo.value)
