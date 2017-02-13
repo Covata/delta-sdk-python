@@ -14,7 +14,7 @@
 
 from __future__ import absolute_import
 
-from .requestsclient import RequestsApiClient
-from .signer import RequestsSigner
+from .requestsclient import RequestsApiClient, RequestsCVTSigner
+from .signer import CVTSigner
 
-__all__ = ["RequestsApiClient", "RequestsSigner"]
+__all__ = ["RequestsApiClient", "CVTSigner", "RequestsCVTSigner"]

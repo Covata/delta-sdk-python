@@ -17,7 +17,9 @@ from __future__ import absolute_import
 import requests
 
 from covata.delta import ApiClient, LogMixin, crypto
-from .signer import RequestsSigner
+from covata.delta.api.signer import CVTSigner
+
+from requests.auth import AuthBase
 
 
 class RequestsApiClient(ApiClient, LogMixin):
@@ -55,15 +57,68 @@ class RequestsApiClient(ApiClient, LogMixin):
             auth=self.signer(requestor_id)).json()
 
     def signer(self, identity_id):
-        # type: (str) -> RequestsSigner
+        # type: (str) -> RequestsCVTSigner
         """
-        Instantiates a new :class:`~covata.delta.api.RequestsSigner` for
+        Instantiates a new :class:`~covata.delta.api.RequestsCVTSigner` for
         the authorizing identity using this :class:`~.RequestsApiClient`.
 
         >>> signer = api_client.signer(authorizing_identity)
 
         :param str identity_id: the authorizing identity id
-        :return: the RequestsSigner object
-        :rtype: :class:`~covata.delta.api.RequestsSigner`
+        :return: the RequestsCVTSigner object
+        :rtype: :class:`~.RequestsCVTSigner`
         """
-        return RequestsSigner(self.keystore, identity_id)
+        return RequestsCVTSigner(self.keystore, identity_id)
+
+
+class RequestsCVTSigner(AuthBase, CVTSigner, LogMixin):
+    def __init__(self, keystore, identity_id):
+        """
+        Creates a Request Signer object to sign a :class:`~requests.Request`
+        object using the CVT1 request signing scheme.
+
+        The :class:`~.RequestsSigner` can be instantiated directly using its
+        constructor:
+
+        >>> signer = RequestsCVTSigner(keystore, authorizing_identity)
+
+        It can also be instantiated indirectly via a
+        :class:`~covata.delta.api.RequestsApiClient` object by calling
+        :func:`~covata.delta.api.RequestsApiClient.signer`:
+
+        >>> signer = api_client.signer(authorizing_identity)
+
+        Example usage for retrieving an identity:
+
+        >>> api_client = RequestsApiClient(keystore)
+        >>> signer = api_client.signer(authorizing_identity)
+        >>> response = requests.get(
+        ...     url="{base_url}{resource}{identity_id}".format(
+        ...         base_url="https://delta.covata.io/v1",
+        ...         resource="/identities/",
+        ...         identity_id="e5fa4059-24c0-42a8-af9a-fe7280b43256"),
+        ...     auth=signer)
+        >>> print(response.json())
+
+        It is also possible to invoke the :func:`~.RequestsSigner.__call__`
+        manually to attach the appropriate headers to a
+        :class:`~requests.PreparedRequest` object:
+
+        >>> prepared_request = request.prepare()
+        >>> signer(prepared_request)
+
+        :param keystore: The KeyStore object
+        :type keystore: :class:`~covata.delta.KeyStore`
+
+        :param str identity_id: the authorizing identity id
+        """
+        super(RequestsCVTSigner, self).__init__(keystore)
+        self.__identity_id = identity_id
+
+    def __call__(self, r):
+        r.headers = self.get_signed_headers(identity_id=self.__identity_id,
+                                            method=r.method,
+                                            url=r.url,
+                                            headers=r.headers,
+                                            payload=r.body)
+        return r

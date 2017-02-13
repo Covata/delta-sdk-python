@@ -24,7 +24,6 @@ from datetime import datetime
 import six.moves.urllib as urllib
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
-from requests.auth import AuthBase
 
 from ..crypto import sha256hex
 from ..utils import LogMixin
@@ -53,119 +52,99 @@ class SignatureMaterial(namedtuple('SignatureMaterial', [
         return self.__canonical_request
 
 
-class RequestsSigner(AuthBase, LogMixin):
+class CVTSigner(LogMixin):
     UNDESIRED_HEADERS = ["Connection", "Content-Length"]
     SIGNING_ALGORITHM = "CVT1-RSA4096-SHA256"
     CVT_DATE_FORMAT = "%Y%m%dT%H%M%SZ"
 
-    def __init__(self, keystore, identity_id):
+    def __init__(self, keystore):
         """
-        Creates a Request Signer object to sign a :class:`~requests.Request`
-        object using the CVT1 request signing scheme.
-
-        The :class:`~.RequestsSigner` can be instantiated directly using its
-        constructor:
-
-        >>> signer = RequestsSigner(keystore, authorizing_identity)
-
-        It can also be instantiated indirectly via a
-        :class:`~covata.delta.api.RequestsApiClient` object by calling
-        :func:`~covata.delta.api.RequestsApiClient.signer`:
-
-        >>> signer = api_client.signer(authorizing_identity)
-
-        Example usage for retrieving an identity:
-
-        >>> api_client = RequestsApiClient(keystore)
-        >>> signer = api_client.signer(authorizing_identity)
-        >>> response = requests.get(
-        ...     url="{base_url}{resource}{identity_id}".format(
-        ...         base_url="https://delta.covata.io/v1",
-        ...         resource="/identities/",
-        ...         identity_id="e5fa4059-24c0-42a8-af9a-fe7280b43256"),
-        ...     auth=signer)
-        >>> print(response.json())
-
-        It is also possible to invoke the :func:`~.RequestsSigner.__call__`
-        manually to attach the appropriate headers to a
-        :class:`~requests.PreparedRequest` object:
-
-        >>> prepared_request = request.prepare()
-        >>> signer(prepared_request)
+        Creates a Request Signer object to sign a request
+        using the CVT1 request signing scheme.
 
         :param keystore: The KeyStore object
         :type keystore: :class:`~covata.delta.KeyStore`
-
-        :param str identity_id: the authorizing identity id
         """
         self.__keystore = keystore
-        self.__identity_id = identity_id
-        self.__request_date = datetime.utcnow().strftime(self.CVT_DATE_FORMAT)
 
-    def __call__(self, r):
-        r.headers['Cvt-Date'] = self.__request_date
-        r.headers['Host'] = urllib.parse.urlparse(r.url).hostname
-        r.headers['Authorization'] = self.__get_auth_header(r)
-        return r
+    def get_signed_headers(self, identity_id, method, url, headers, payload):
+        """
+        Gets the signed headers
 
-    def __get_auth_header(self, request):
-        signature_materials = self.__get_materials(request)
+        :param str identity_id: the authorizing identity id
+        :param str method: the HTTP request method
+        :param str url: the delta url
+        :param dict headers: the request headers
+        :param payload: the request payload
+        :return: the original headers with a signed Authorization header.
+        :rtype: dict
+        """
+        _url = urllib.parse.urlparse(url)
+        cvt_date = datetime.utcnow().strftime(self.CVT_DATE_FORMAT)
+        _headers = dict(headers)
+        _headers["Cvt-Date"] = cvt_date
+        _headers['Host'] = _url.hostname
+        signature_materials = self.__get_materials(
+            method, _url.path, _url.query, _headers, payload)
         canonical_request = signature_materials.canonical_request
         self.logger.debug(canonical_request)
         string_to_sign = "\n".join([
             self.SIGNING_ALGORITHM,
-            self.__request_date,
+            cvt_date,
             sha256hex(canonical_request).decode('utf-8')])
 
         self.logger.debug(string_to_sign)
-        signature = b64encode(self.__sign(string_to_sign)).decode('utf-8')
+        signature = \
+            b64encode(self.__sign(string_to_sign, identity_id)).decode('utf-8')
 
-        return "{algorithm} Identity={identity_id}, " \
-               "SignedHeaders={signed_headers}, Signature={signature}" \
+        _headers["Authorization"] = \
+            "{algorithm} Identity={identity_id}, " \
+            "SignedHeaders={signed_headers}, Signature={signature}" \
             .format(algorithm=self.SIGNING_ALGORITHM,
-                    identity_id=self.__identity_id,
+                    identity_id=identity_id,
                     signed_headers=signature_materials.signed_headers,
                     signature=signature)
+        return _headers
 
-    def __sign(self, string_to_sign):
-        private_key = self.__keystore.load(self.__identity_id + ".signing.pem")
+    def __sign(self, string_to_sign, identity_id):
+        private_key = self.__keystore.load(identity_id + ".signing.pem")
         return private_key.sign(string_to_sign.encode("utf-8"),
                                 padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                             salt_length=32),
                                 hashes.SHA256())
 
-    def __get_hashed_payload(self, payload):
-        # type: (bytes) -> unicode
-        sorted_payload = "{}" if payload is None else json.dumps(
-            json.loads(payload.decode('utf-8')),
-            separators=(',', ':'),
-            sort_keys=True)
-        return sha256hex(sorted_payload).decode('utf-8')
-
-    def __get_materials(self, request):
-        # type: (PreparedRequest) -> SignatureMaterial
+    def __get_materials(self, method, path, query, headers, payload):
+        # type: (str, str, dict, dict, bytes or None) -> SignatureMaterial
         # /master/identities/a123?key=an+arbitrary+value&key2=x
-        path = request.path_url.split("?")
-        uri = self.__encode_uri("/".join(path[0].split("/")[2:]))
-        query = path[1].replace("+", "%20") if len(path) == 2 else ""
+        uri = self.__encode_uri("/".join(path.split("/")[2:]))
+        query = query.replace("+", "%20")
 
         sorted_header = OrderedDict(sorted(
             (k.lower(), re.sub("\s+", ' ', v).strip())
-            for k, v in request.headers.items()
+            for k, v in headers.items()
             if k not in self.UNDESIRED_HEADERS))
 
         canonical_headers = "\n ".join(
             "{}:{}".format(k, v) for (k, v) in sorted_header.items())
 
         signed_headers = ";".join(sorted_header.keys())
-        hashed_payload = self.__get_hashed_payload(request.body)
+        hashed_payload = self.__get_hashed_payload(payload)
 
-        return SignatureMaterial(method=request.method,
+        return SignatureMaterial(method=method,
                                  uri=uri,
                                  query_params=query,
                                  canonical_headers=canonical_headers,
                                  signed_headers=signed_headers,
                                  hashed_payload=hashed_payload)
+
+    @staticmethod
+    def __get_hashed_payload(payload):
+        # type: (bytes) -> unicode
+        sorted_payload = "{}" if payload is None else json.dumps(
+            json.loads(payload.decode('utf-8')),
+            separators=(',', ':'),
+            sort_keys=True)
+        return sha256hex(sorted_payload).decode('utf-8')
 
     @staticmethod
     def __encode_uri(resource_path):
