@@ -14,51 +14,15 @@
 
 from __future__ import absolute_import
 
-import json
-from abc import ABCMeta, abstractmethod
-import six
-
 import requests
 
+from covata.delta.util import LogMixin
+from covata.delta.api import ApiClient
 
-@six.add_metaclass(ABCMeta)
-class ApiClient(object):
 
-    DELTA_URL = 'https://delta.covata.cc/master'    # type: str
-    RESOURCE_IDENTITIES = '/identities'             # type: str
-
-    def __init__(self, crypto_service):
-        # type: (object) -> ApiClient
-        """
-        Constructs a new Delta API client with the given configuration.
-
-        :param crypto_service: the CryptoService object
-        :type crypto_service: :class:`~covata.delta.crypto.CryptoService`
-        """
-        self.crypto_service = crypto_service
-
-    @abstractmethod
+class RequestsApiClient(ApiClient, LogMixin):
     def register_identity(self, external_id=None, metadata=None):
-        # type: (str or None, dict or None) -> str
-        """
-        Creates a new identity in Delta with the provided metadata
-        and external id.
-
-        :param Optional[str] external_id:
-            the external id to associate with the identity
-
-        :param Optional[dict] metadata:
-            the metadata to associate with the identity
-
-        :return: the id of the newly created identity
-
-        :rtype: str
-        """
-
-
-class RequestsApiClient(ApiClient):
-    def register_identity(self, external_id=None, metadata=None):
-        crypto = self.crypto_service
+        crypto = self._crypto_service
         signing_private_key = crypto.generate_key()
         crypto_private_key = crypto.generate_key()
 
@@ -74,9 +38,17 @@ class RequestsApiClient(ApiClient):
             url=self.DELTA_URL + self.RESOURCE_IDENTITIES,
             json=dict((k, v) for k, v in body.items() if v is not None))
 
-        identity_id = json.loads(response.text)['identityId']
+        identity_id = response.json()['identityId']
 
         crypto.save(signing_private_key, identity_id + ".signing.pem")
         crypto.save(crypto_private_key, identity_id + ".crypto.pem")
 
         return identity_id
+
+    def get_identity(self, requestor_id, identity_id):
+        return requests.get(
+            url="{base_url}{resource}/{identity_id}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_IDENTITIES,
+                identity_id=identity_id),
+            auth=self._crypto_service.signer(requestor_id)).json()
