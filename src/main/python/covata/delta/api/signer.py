@@ -86,7 +86,7 @@ class RequestsSigner(AuthBase, LogMixin):
         ...     auth=signer)
         >>> print(response.json())
 
-        It is also possible to invoke the :func:`~.CVTSigner.__call__`
+        It is also possible to invoke the :func:`~.RequestsSigner.__call__`
         manually to attach the appropriate headers to a
         :class:`~requests.PreparedRequest` object:
 

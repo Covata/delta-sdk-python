@@ -57,8 +57,8 @@ class RequestsApiClient(ApiClient, LogMixin):
     def signer(self, identity_id):
         # type: (str) -> RequestsSigner
         """
-        Instantiates a new :class:`~.CVTSigner` for the authorizing identity
-        using this :class:`~.RequestsApiClient`.
+        Instantiates a new :class:`~covata.delta.api.RequestsSigner` for
+        the authorizing identity using this :class:`~.RequestsApiClient`.
 
         >>> signer = api_client.signer(authorizing_identity)
 

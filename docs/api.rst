@@ -34,7 +34,7 @@ An implementation of ``ApiClient`` abstract base class using ``Requests``.
    :show-inheritance:
    :members:
 
-Request Signer
+RequestsSigner
 --------------
 
 An authentication interceptor for ``Requests`` library.

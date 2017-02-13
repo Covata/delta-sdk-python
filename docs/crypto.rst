@@ -16,7 +16,7 @@
 Client-Side Cryptography
 ========================
 
-The Delta Crypto Service provides functionality for client side cryptography.
+The Delta Crypto package provides functionality for client side cryptography.
 
 .. automodule:: covata.delta.crypto
     :members:
