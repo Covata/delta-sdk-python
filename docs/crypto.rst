@@ -16,18 +16,24 @@
 Client-Side Cryptography
 ========================
 
-CryptoService
--------------
+The Delta Crypto Service provides functionality for client side cryptography.
+
+.. automodule:: covata.delta.crypto
+    :members:
+
+KeyStore
+--------
+
+.. currentmodule:: covata.delta
+
+.. autoclass:: KeyStore
+    :members:
+
+FileSystemKeyStore
+~~~~~~~~~~~~~~~~~~
 
 .. currentmodule:: covata.delta.crypto
 
-The Delta Crypto Service provides functionality for client side cryptography.
-
-.. autoclass:: CryptoService
-    :members:
-
-CVT1 Request Signer
--------------------
-
-.. autoclass:: CVTSigner
+.. autoclass:: FileSystemKeyStore
+    :show-inheritance:
     :members:

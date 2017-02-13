@@ -25,15 +25,19 @@ class ApiClient(object):
     DELTA_URL = 'https://delta.covata.io/v1'        # type: str
     RESOURCE_IDENTITIES = '/identities'             # type: str
 
-    def __init__(self, crypto_service):
-        # type: (object) -> ApiClient
+    def __init__(self, keystore):
+        # type: (KeyStore) -> ApiClient
         """
         Constructs a new Delta API client with the given configuration.
 
-        :param crypto_service: the CryptoService object
-        :type crypto_service: :class:`~covata.delta.crypto.CryptoService`
+        :param keystore: the KeyStore object
+        :type keystore: :class:`~.KeyStore`
         """
-        self._crypto_service = crypto_service
+        self.__keystore = keystore
+
+    @property
+    def keystore(self):
+        return self.__keystore
 
     @abstractmethod
     def register_identity(self, external_id=None, metadata=None):
@@ -63,4 +67,44 @@ class ApiClient(object):
         :param str identity_id: the identity id to retrieve
         :return: the retrieved identity
         :rtype: dict
+        """
+
+
+@six.add_metaclass(ABCMeta)
+class KeyStore(object):
+
+    @abstractmethod
+    def save(self, private_key, name):
+        """
+        Saves a private key object (encrypted) to keystore.
+
+        Saving the Private Cryptographic Key:
+
+        >>> keystore.save(private_key, identity_id + ".crypto.pem")
+
+        Saving the Private Signing Key:
+
+        >>> keystore.save(private_key, identity_id + ".signing.pem")
+
+        :param private_key: the private key object
+        :type private_key: :class:`RSAPrivateKey`
+        :param str name: the name of the .pem file to be written
+        """
+
+    @abstractmethod
+    def load(self, name):
+        """
+        Loads a private key instance from an encrypted .pem file
+        in the keystore.
+
+        Loading the Private Cryptographic Key:
+
+        >>> private_key = keystore.load(identity_id + ".crypto.pem")
+
+        Loading the Private Signing Key:
+
+        >>> private_key = keystore.load(identity_id + ".signing.pem")
+
+        :param str name: the name of the .pem file to be loaded
+        :return: the private key object
         """

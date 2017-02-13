@@ -12,15 +12,15 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import pytest
-import tempfile
 import shutil
+import tempfile
+
+import pytest
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 import covata.delta.crypto as crypto
-import covata.delta.api as api
 
 
 @pytest.yield_fixture(scope="function")
@@ -31,8 +31,8 @@ def temp_directory():
 
 
 @pytest.fixture(scope="function")
-def crypto_service(temp_directory):
-    return crypto.CryptoService(temp_directory, b"passphrase")
+def keystore(temp_directory):
+    return crypto.FileSystemKeyStore(temp_directory, b"passphrase")
 
 
 @pytest.fixture(scope="session")
@@ -55,14 +55,3 @@ def key2bytes():
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PublicFormat.PKCS1)
     return convert
-
-
-@pytest.fixture(scope="function")
-def mock_signer(mocker, crypto_service):
-    return mocker.patch.object(crypto_service, "signer",
-                               return_value=mocker.Mock())
-
-
-@pytest.fixture(scope="function")
-def api_client(crypto_service):
-    return api.RequestsApiClient(crypto_service)

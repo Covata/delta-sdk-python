@@ -18,15 +18,16 @@ import json
 import re
 from base64 import b64encode
 from collections import OrderedDict
+from collections import namedtuple
 from datetime import datetime
 
 import six.moves.urllib as urllib
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from requests.auth import AuthBase
-from collections import namedtuple
 
-from covata.delta.util import LogMixin
+from ..crypto import sha256hex
+from ..utils import LogMixin
 
 
 class SignatureMaterial(namedtuple('SignatureMaterial', [
@@ -52,36 +53,37 @@ class SignatureMaterial(namedtuple('SignatureMaterial', [
         return self.__canonical_request
 
 
-class CVTSigner(AuthBase, LogMixin):
+class RequestsSigner(AuthBase, LogMixin):
     UNDESIRED_HEADERS = ["Connection", "Content-Length"]
     SIGNING_ALGORITHM = "CVT1-RSA4096-SHA256"
     CVT_DATE_FORMAT = "%Y%m%dT%H%M%SZ"
 
-    def __init__(self, crypto_service, identity_id):
+    def __init__(self, keystore, identity_id):
         """
         Creates a Request Signer object to sign a :class:`~requests.Request`
         object using the CVT1 request signing scheme.
 
-        The :class:`~.CVTSigner` can be instantiated directly using its
+        The :class:`~.RequestsSigner` can be instantiated directly using its
         constructor:
 
-        >>> signer = CVTSigner(crypto_service, authorizing_identity)
+        >>> signer = RequestsSigner(keystore, authorizing_identity)
 
         It can also be instantiated indirectly via a
-        :class:`~.CryptoService` object by calling
-        :func:`~covata.delta.crypto.CryptoService.signer`:
+        :class:`~covata.delta.api.RequestsApiClient` object by calling
+        :func:`~covata.delta.api.RequestsApiClient.signer`:
 
-        >>> signer = crypto_service.signer(authorizing_identity)
+        >>> signer = api_client.signer(authorizing_identity)
 
         Example usage for retrieving an identity:
 
-        >>> api_client = RequestsApiClient(crypto_service)
+        >>> api_client = RequestsApiClient(keystore)
+        >>> signer = api_client.signer(authorizing_identity)
         >>> response = requests.get(
         ...     url="{base_url}{resource}{identity_id}".format(
         ...         base_url="https://delta.covata.io/v1",
         ...         resource="/identities/",
         ...         identity_id="e5fa4059-24c0-42a8-af9a-fe7280b43256"),
-        ...     auth=crypto_service.signer(requestor_id))
+        ...     auth=signer)
         >>> print(response.json())
 
         It is also possible to invoke the :func:`~.CVTSigner.__call__`
@@ -91,12 +93,12 @@ class CVTSigner(AuthBase, LogMixin):
         >>> prepared_request = request.prepare()
         >>> signer(prepared_request)
 
-        :param crypto_service: The Crypto Service object
-        :type crypto_service: :class:`~covata.delta.crypto.CryptoService`
+        :param keystore: The KeyStore object
+        :type keystore: :class:`~covata.delta.KeyStore`
 
         :param str identity_id: the authorizing identity id
         """
-        self.__crypto_service = crypto_service
+        self.__keystore = keystore
         self.__identity_id = identity_id
         self.__request_date = datetime.utcnow().strftime(self.CVT_DATE_FORMAT)
 
@@ -113,7 +115,7 @@ class CVTSigner(AuthBase, LogMixin):
         string_to_sign = "\n".join([
             self.SIGNING_ALGORITHM,
             self.__request_date,
-            self.__crypto_service.sha256hex(canonical_request).decode('utf-8')])
+            sha256hex(canonical_request).decode('utf-8')])
 
         self.logger.debug(string_to_sign)
         signature = b64encode(self.__sign(string_to_sign)).decode('utf-8')
@@ -126,8 +128,7 @@ class CVTSigner(AuthBase, LogMixin):
                     signature=signature)
 
     def __sign(self, string_to_sign):
-        private_key = self.__crypto_service.load(
-            self.__identity_id + ".signing.pem")
+        private_key = self.__keystore.load(self.__identity_id + ".signing.pem")
         return private_key.sign(string_to_sign.encode("utf-8"),
                                 padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                             salt_length=32),
@@ -139,7 +140,7 @@ class CVTSigner(AuthBase, LogMixin):
             json.loads(payload.decode('utf-8')),
             separators=(',', ':'),
             sort_keys=True)
-        return self.__crypto_service.sha256hex(sorted_payload).decode('utf-8')
+        return sha256hex(sorted_payload).decode('utf-8')
 
     def __get_materials(self, request):
         # type: (PreparedRequest) -> SignatureMaterial

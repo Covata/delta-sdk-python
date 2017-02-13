@@ -14,13 +14,27 @@
 
 import uuid
 
+import pytest
+import requests
 import responses
 
-from covata.delta.api import ApiClient
+from covata.delta import ApiClient
+from covata.delta.api import RequestsApiClient
+
+
+@pytest.fixture(scope="function")
+def mock_signer(mocker, api_client):
+    return mocker.patch.object(api_client, "signer",
+                               return_value=mocker.Mock())
+
+
+@pytest.fixture(scope="function")
+def api_client(keystore):
+    return RequestsApiClient(keystore)
 
 
 @responses.activate
-def test_register_identity(mocker, api_client, crypto_service, private_key,
+def test_register_identity(mocker, api_client, keystore, private_key,
                            key2bytes):
     expected_id = str(uuid.uuid4())
     responses.add(responses.POST,
@@ -28,11 +42,11 @@ def test_register_identity(mocker, api_client, crypto_service, private_key,
                   status=201,
                   json=dict(identityId=expected_id))
 
-    mocker.patch.object(crypto_service, 'generate_key', return_value=private_key)
+    mocker.patch('covata.delta.crypto.generate_key', return_value=private_key)
 
     identity_id = api_client.register_identity("1", {})
-    crypto_key = crypto_service.load("%s.crypto.pem" % identity_id)
-    signing_key = crypto_service.load("%s.signing.pem" % identity_id)
+    crypto_key = keystore.load("%s.crypto.pem" % identity_id)
+    signing_key = keystore.load("%s.signing.pem" % identity_id)
     assert identity_id == expected_id
     assert key2bytes(crypto_key) == key2bytes(private_key)
     assert key2bytes(signing_key) == key2bytes(private_key)
@@ -60,3 +74,15 @@ def test_get_identity(api_client, mock_signer):
     mock_signer.assert_called_once_with("requestor_id")
 
     assert response == expected_json
+
+
+def test_construct_signer(mocker, api_client, keystore, private_key):
+    load = mocker.patch.object(keystore, 'load', return_value=private_key)
+    signer = api_client.signer("mock")
+
+    r = requests.Request(url='https://test.com/stage/resource',
+                         method='POST',
+                         headers=dict(someKey="some value"),
+                         json=dict(content="abcd"))
+    signer(r.prepare())
+    load.assert_called_once_with("mock.signing.pem")

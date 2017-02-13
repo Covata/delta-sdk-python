@@ -13,7 +13,8 @@
 #   limitations under the License.
 
 from __future__ import absolute_import
-from .apiclient import ApiClient
-from .requestsclient import RequestsApiClient
 
-__all__ = ["ApiClient", "RequestsApiClient"]
+from .requestsclient import RequestsApiClient
+from .signer import RequestsSigner
+
+__all__ = ["RequestsApiClient", "RequestsSigner"]

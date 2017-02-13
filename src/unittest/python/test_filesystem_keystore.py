@@ -1,0 +1,52 @@
+#   Copyright 2017 Covata Limited or its affiliates
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+import pytest
+
+from covata.delta.crypto import FileSystemKeyStore
+
+
+@pytest.fixture(scope="function")
+def fs_keystore(temp_directory):
+    return FileSystemKeyStore(temp_directory, b"passphrase")
+
+
+def test_decrypt_private_key(fs_keystore, private_key, key2bytes):
+    fs_keystore.save(private_key, "mock.pem")
+    retrieved = key2bytes(fs_keystore.load("mock.pem"))
+    expected = key2bytes(private_key)
+    assert retrieved == expected
+
+
+def test_encrypt_to_file(mocker, fs_keystore, private_key):
+    mock_makedirs = mocker.patch('os.makedirs')
+    mocker.patch('os.path.isdir', return_value=False)
+    fs_keystore.save(private_key, "mock.pem")
+    mock_makedirs.assert_called_once_with(fs_keystore.key_store_path)
+
+
+def test_save__should__fail_when_key_exists(fs_keystore, private_key):
+    fs_keystore.save(private_key, "mock.pem")
+    with pytest.raises(IOError) as excinfo:
+        fs_keystore.save(private_key, "mock.pem")
+    expected = "Save failed: A key with name [mock.pem] exists in keystore"
+    assert expected in str(excinfo.value)
+
+
+def test_save__should__fail_when_type_is_not_rsaprivatekey(fs_keystore):
+    with pytest.raises(TypeError) as excinfo:
+        fs_keystore.save("key", "mock.pem")
+    expected = "private_key must be an instance of RSAPrivateKey, actual: str"
+    assert expected in str(excinfo.value)
+

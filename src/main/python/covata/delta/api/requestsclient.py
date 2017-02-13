@@ -16,23 +16,24 @@ from __future__ import absolute_import
 
 import requests
 
-from covata.delta.util import LogMixin
-from covata.delta.api import ApiClient
+from covata.delta import ApiClient, LogMixin, crypto
+from .signer import RequestsSigner
 
 
 class RequestsApiClient(ApiClient, LogMixin):
     def register_identity(self, external_id=None, metadata=None):
-        crypto = self._crypto_service
+        keystore = self.keystore
         signing_private_key = crypto.generate_key()
         crypto_private_key = crypto.generate_key()
 
         signing_public_key = signing_private_key.public_key()
         crypto_public_key = crypto_private_key.public_key()
 
-        body = dict(signingPublicKey=crypto.serialized(signing_public_key),
-                    cryptoPublicKey=crypto.serialized(crypto_public_key),
-                    externalId=external_id,
-                    metadata=metadata)
+        body = dict(
+            signingPublicKey=crypto.serialize_public_key(signing_public_key),
+            cryptoPublicKey=crypto.serialize_public_key(crypto_public_key),
+            externalId=external_id,
+            metadata=metadata)
 
         response = requests.post(
             url=self.DELTA_URL + self.RESOURCE_IDENTITIES,
@@ -40,8 +41,8 @@ class RequestsApiClient(ApiClient, LogMixin):
 
         identity_id = response.json()['identityId']
 
-        crypto.save(signing_private_key, identity_id + ".signing.pem")
-        crypto.save(crypto_private_key, identity_id + ".crypto.pem")
+        keystore.save(signing_private_key, identity_id + ".signing.pem")
+        keystore.save(crypto_private_key, identity_id + ".crypto.pem")
 
         return identity_id
 
@@ -51,4 +52,18 @@ class RequestsApiClient(ApiClient, LogMixin):
                 base_url=self.DELTA_URL,
                 resource=self.RESOURCE_IDENTITIES,
                 identity_id=identity_id),
-            auth=self._crypto_service.signer(requestor_id)).json()
+            auth=self.signer(requestor_id)).json()
+
+    def signer(self, identity_id):
+        # type: (str) -> RequestsSigner
+        """
+        Instantiates a new :class:`~.CVTSigner` for the authorizing identity
+        using this :class:`~.RequestsApiClient`.
+
+        >>> signer = api_client.signer(authorizing_identity)
+
+        :param str identity_id: the authorizing identity id
+        :return: the RequestsSigner object
+        :rtype: :class:`~covata.delta.api.RequestsSigner`
+        """
+        return RequestsSigner(self.keystore, identity_id)
