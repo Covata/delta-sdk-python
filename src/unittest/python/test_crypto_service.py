@@ -17,11 +17,12 @@ import base64
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from covata.delta.crypto import generate_key, serialize_public_key, sha256hex
+from covata.delta.crypto import generate_private_key, serialize_public_key, \
+    calculate_sha256hex
 
 
-def test_generate_key_pairs():
-    private_key = generate_key()
+def test_generate_private_key():
+    private_key = generate_private_key()
     assert isinstance(private_key, rsa.RSAPrivateKey)
     public_key = private_key.public_key()
     assert isinstance(public_key, rsa.RSAPublicKey)
@@ -39,5 +40,5 @@ def test_serialize_public_key_to_b64_encoded_der_subject_public_key_info_format(
 
 
 def test_compute_sha256_hex_digest():
-    assert sha256hex("test") == \
+    assert calculate_sha256hex("test") == \
            b"9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"

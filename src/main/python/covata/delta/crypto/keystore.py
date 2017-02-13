@@ -20,11 +20,11 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 
-from ..interfaces import KeyStore
-from ..utils import LogMixin
+from covata.delta import DeltaKeyStore
+from covata.delta import LogMixin
 
 
-class FileSystemKeyStore(KeyStore, LogMixin):
+class FileSystemKeyStore(DeltaKeyStore, LogMixin):
     def __init__(self,
                  key_store_path,
                  key_store_passphrase):
@@ -39,7 +39,18 @@ class FileSystemKeyStore(KeyStore, LogMixin):
         self.key_store_path = os.path.expanduser(key_store_path)
         self.__key_store_passphrase = key_store_passphrase
 
-    def save(self, private_key, name):
+    def save(self, signing_private_key, crypto_private_key, identity_id):
+        # type: (RSAPrivateKey, RSAPrivateKey, str) -> None
+        self.__save(signing_private_key, "{}.signing.pem".format(identity_id))
+        self.__save(crypto_private_key, "{}.crypto.pem".format(identity_id))
+
+    def load_signing_private_key(self, identity_id):
+        return self.__load("{}.signing.pem".format(identity_id))
+
+    def load_crypto_private_key(self, identity_id):
+        return self.__load("{}.crypto.pem".format(identity_id))
+
+    def __save(self, private_key, file_name):
         # type: (RSAPrivateKey, str) -> None
         if not isinstance(private_key, RSAPrivateKey):
             raise TypeError("private_key must be an instance of RSAPrivateKey, "
@@ -50,26 +61,26 @@ class FileSystemKeyStore(KeyStore, LogMixin):
             serialization.PrivateFormat.PKCS8,
             serialization.BestAvailableEncryption(self.__key_store_passphrase))
 
-        file_path = os.path.join(self.key_store_path, name)
+        file_path = os.path.join(self.key_store_path, file_name)
         if not os.path.isdir(self.key_store_path):
             self.logger.debug("creating directory %s", self.key_store_path)
             os.makedirs(self.key_store_path)
 
         if os.path.isfile(file_path):
             msg = "Save failed: A key with name [{}] exists in keystore".format(
-                name)
+                file_name)
             self.logger.error(msg)
             raise IOError(msg)
 
         with open(file_path, 'w') as f:
-            self.logger.debug("Saving %s", name)
+            self.logger.debug("Saving %s", file_name)
             f.write(pem.decode(encoding='utf8'))
 
-    def load(self, name):
+    def __load(self, file_name):
         # type: (str) -> RSAPrivateKey
-        file_path = os.path.join(self.key_store_path, name)
+        file_path = os.path.join(self.key_store_path, file_name)
         with(open(file_path, 'r')) as f:
-            self.logger.debug("Loading %s", name)
+            self.logger.debug("Loading %s", file_name)
             return serialization.load_pem_private_key(
                 f.read().encode('utf-8'),
                 password=self.__key_store_passphrase,

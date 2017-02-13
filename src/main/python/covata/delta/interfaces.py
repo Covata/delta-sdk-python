@@ -20,7 +20,7 @@ import six
 
 
 @six.add_metaclass(ABCMeta)
-class ApiClient(object):
+class DeltaApiClient(object):
 
     DELTA_URL = 'https://delta.covata.io/v1'        # type: str
     RESOURCE_IDENTITIES = '/identities'             # type: str
@@ -71,40 +71,34 @@ class ApiClient(object):
 
 
 @six.add_metaclass(ABCMeta)
-class KeyStore(object):
+class DeltaKeyStore(object):
 
     @abstractmethod
-    def save(self, private_key, name):
+    def save(self, signing_private_key, crypto_private_key, identity_id):
         """
-        Saves a private key object (encrypted) to keystore.
+        Saves a private key object to the key store.
 
-        Saving the Private Cryptographic Key:
-
-        >>> keystore.save(private_key, identity_id + ".crypto.pem")
-
-        Saving the Private Signing Key:
-
-        >>> keystore.save(private_key, identity_id + ".signing.pem")
-
-        :param private_key: the private key object
-        :type private_key: :class:`RSAPrivateKey`
-        :param str name: the name of the .pem file to be written
+        :param signing_private_key: the private signing key object
+        :type signing_private_key: :class:`RSAPrivateKey`
+        :param crypto_private_key: the private cryptographic key object
+        :type crypto_private_key: :class:`RSAPrivateKey`
+        :param str identity_id: the identity id of the key owner
         """
 
     @abstractmethod
-    def load(self, name):
+    def load_signing_private_key(self, identity_id):
         """
-        Loads a private key instance from an encrypted .pem file
-        in the keystore.
+        Loads a private signing key instance for the given identity id.
 
-        Loading the Private Cryptographic Key:
+        :param str identity_id: the identity id of the key owner
+        :return: the signing private key object
+        """
 
-        >>> private_key = keystore.load(identity_id + ".crypto.pem")
+    @abstractmethod
+    def load_crypto_private_key(self, identity_id):
+        """
+        Loads a private cryptographic key instance for the given identity id.
 
-        Loading the Private Signing Key:
-
-        >>> private_key = keystore.load(identity_id + ".signing.pem")
-
-        :param str name: the name of the .pem file to be loaded
-        :return: the private key object
+        :param str identity_id: the identity id of the key owner
+        :return: the cryptographic private key object
         """

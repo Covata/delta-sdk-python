@@ -21,16 +21,23 @@ The Delta Crypto package provides functionality for client side cryptography.
 .. automodule:: covata.delta.crypto
     :members:
 
-KeyStore
---------
+DeltaKeyStore
+-------------
+
+The ``DeltaKeyStore`` provides the interface for a key-storage
+backend of choice.
 
 .. currentmodule:: covata.delta
 
-.. autoclass:: KeyStore
+.. autoclass:: DeltaKeyStore
     :members:
 
 FileSystemKeyStore
 ~~~~~~~~~~~~~~~~~~
+
+Implementation of the ``DeltaKeyStore`` abstract base class using the file
+system. Private keys are saved in the file system as encrypted PEM formats
+and are only decrypted in memory on read.
 
 .. currentmodule:: covata.delta.crypto
 

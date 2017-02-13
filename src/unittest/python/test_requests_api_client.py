@@ -18,7 +18,7 @@ import pytest
 import requests
 import responses
 
-from covata.delta import ApiClient
+from covata.delta import DeltaApiClient
 from covata.delta.api import RequestsApiClient
 
 
@@ -38,15 +38,16 @@ def test_register_identity(mocker, api_client, keystore, private_key,
                            key2bytes):
     expected_id = str(uuid.uuid4())
     responses.add(responses.POST,
-                  ApiClient.DELTA_URL + ApiClient.RESOURCE_IDENTITIES,
+                  DeltaApiClient.DELTA_URL + DeltaApiClient.RESOURCE_IDENTITIES,
                   status=201,
                   json=dict(identityId=expected_id))
 
-    mocker.patch('covata.delta.crypto.generate_key', return_value=private_key)
+    mocker.patch('covata.delta.crypto.generate_private_key',
+                 return_value=private_key)
 
     identity_id = api_client.register_identity("1", {})
-    crypto_key = keystore.load("%s.crypto.pem" % identity_id)
-    signing_key = keystore.load("%s.signing.pem" % identity_id)
+    crypto_key = keystore.load_crypto_private_key(identity_id)
+    signing_key = keystore.load_signing_private_key(identity_id)
     assert identity_id == expected_id
     assert key2bytes(crypto_key) == key2bytes(private_key)
     assert key2bytes(signing_key) == key2bytes(private_key)
@@ -62,8 +63,8 @@ def test_get_identity(api_client, mock_signer):
 
     responses.add(responses.GET,
                   "{base_path}{resource}/{identity_id}".format(
-                      base_path=ApiClient.DELTA_URL,
-                      resource=ApiClient.RESOURCE_IDENTITIES,
+                      base_path=DeltaApiClient.DELTA_URL,
+                      resource=DeltaApiClient.RESOURCE_IDENTITIES,
                       identity_id=expected_id),
                   status=200,
                   json=expected_json)
@@ -77,12 +78,13 @@ def test_get_identity(api_client, mock_signer):
 
 
 def test_construct_signer(mocker, api_client, keystore, private_key):
-    load = mocker.patch.object(keystore, 'load', return_value=private_key)
-    signer = api_client.signer("mock")
+    load_signing_private_key = mocker.patch.object(
+        keystore, 'load_signing_private_key', return_value=private_key)
+    signer = api_client.signer("mock_id")
 
     r = requests.Request(url='https://test.com/stage/resource',
                          method='POST',
                          headers=dict(someKey="some value"),
                          json=dict(content="abcd"))
     signer(r.prepare())
-    load.assert_called_once_with("mock.signing.pem")
+    load_signing_private_key.assert_called_once_with("mock_id")

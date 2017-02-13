@@ -16,17 +16,16 @@ from __future__ import absolute_import
 
 import requests
 
-from covata.delta import ApiClient, LogMixin, crypto
+from covata.delta import DeltaApiClient, LogMixin, crypto
 from covata.delta.api.signer import CVTSigner
 
 from requests.auth import AuthBase
 
 
-class RequestsApiClient(ApiClient, LogMixin):
+class RequestsApiClient(DeltaApiClient, LogMixin):
     def register_identity(self, external_id=None, metadata=None):
-        keystore = self.keystore
-        signing_private_key = crypto.generate_key()
-        crypto_private_key = crypto.generate_key()
+        signing_private_key = crypto.generate_private_key()
+        crypto_private_key = crypto.generate_private_key()
 
         signing_public_key = signing_private_key.public_key()
         crypto_public_key = crypto_private_key.public_key()
@@ -43,9 +42,9 @@ class RequestsApiClient(ApiClient, LogMixin):
 
         identity_id = response.json()['identityId']
 
-        keystore.save(signing_private_key, identity_id + ".signing.pem")
-        keystore.save(crypto_private_key, identity_id + ".crypto.pem")
-
+        self.keystore.save(signing_private_key=signing_private_key,
+                           crypto_private_key=crypto_private_key,
+                           identity_id=identity_id)
         return identity_id
 
     def get_identity(self, requestor_id, identity_id):

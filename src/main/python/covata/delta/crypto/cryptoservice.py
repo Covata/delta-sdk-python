@@ -21,16 +21,17 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-__all__ = ["generate_key", "serialize_public_key", "sha256hex"]
+__all__ = ["generate_private_key", "serialize_public_key",
+           "calculate_sha256hex"]
 
 
-def generate_key():
+def generate_private_key():
     # type: () -> rsa.RSAPrivateKey
     """
     Generates an RSA private key object. The public key object can be
     extracted by calling public_key() method on the generated key object.
 
-    >>> private_key = FileSystemKeyStore.generate_key() # generate a private key
+    >>> private_key = generate_private_key() # generate a private key
     >>> public_key = private_key.public_key() # get associated public key
 
     :return: the generated private key object
@@ -57,7 +58,7 @@ def serialize_public_key(public_key):
     return base64.b64encode(der).decode(encoding='utf-8')
 
 
-def sha256hex(payload):
+def calculate_sha256hex(payload):
     """
     Calculates the SHA256 hex digest of the given payload.
 
