@@ -20,20 +20,24 @@ import six
 
 
 @six.add_metaclass(ABCMeta)
-class ApiClient(object):
+class DeltaApiClient(object):
 
     DELTA_URL = 'https://delta.covata.io/v1'        # type: str
     RESOURCE_IDENTITIES = '/identities'             # type: str
 
-    def __init__(self, crypto_service):
-        # type: (object) -> ApiClient
+    def __init__(self, keystore):
+        # type: (KeyStore) -> ApiClient
         """
         Constructs a new Delta API client with the given configuration.
 
-        :param crypto_service: the CryptoService object
-        :type crypto_service: :class:`~covata.delta.crypto.CryptoService`
+        :param keystore: the KeyStore object
+        :type keystore: :class:`~.KeyStore`
         """
-        self._crypto_service = crypto_service
+        self.__keystore = keystore
+
+    @property
+    def keystore(self):
+        return self.__keystore
 
     @abstractmethod
     def register_identity(self, external_id=None, metadata=None):
@@ -63,4 +67,41 @@ class ApiClient(object):
         :param str identity_id: the identity id to retrieve
         :return: the retrieved identity
         :rtype: dict
+        """
+
+
+@six.add_metaclass(ABCMeta)
+class DeltaKeyStore(object):
+
+    @abstractmethod
+    def store_keys(self,
+                   identity_id,
+                   private_signing_key,
+                   private_encryption_key):
+        """
+        Stores the signing and encryption key pairs under a given identity id.
+
+        :param str identity_id: the identity id of the key owner
+        :param private_signing_key: the private signing key object
+        :type private_signing_key: :class:`RSAPrivateKey`
+        :param private_encryption_key: the private cryptographic key object
+        :type private_encryption_key: :class:`RSAPrivateKey`
+        """
+
+    @abstractmethod
+    def get_private_signing_key(self, identity_id):
+        """
+        Loads a private signing key instance for the given identity id.
+
+        :param str identity_id: the identity id of the key owner
+        :return: the signing private key object
+        """
+
+    @abstractmethod
+    def get_private_encryption_key(self, identity_id):
+        """
+        Loads a private encryption key instance for the given identity id.
+
+        :param str identity_id: the identity id of the key owner
+        :return: the cryptographic private key object
         """

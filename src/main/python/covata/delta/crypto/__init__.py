@@ -13,7 +13,11 @@
 #   limitations under the License.
 
 from __future__ import absolute_import
-from .cryptoservice import CryptoService
-from .signer import CVTSigner
 
-__all__ = ["CryptoService", "CVTSigner"]
+from .cryptoservice import serialize_public_key, calculate_sha256hex, \
+    generate_private_key
+from .keystore import FileSystemKeyStore
+
+__all__ = ["FileSystemKeyStore",
+           "serialize_public_key", "calculate_sha256hex",
+           "generate_private_key"]
