@@ -28,13 +28,13 @@ class FileSystemKeyStore(DeltaKeyStore, LogMixin):
     def __init__(self,
                  key_store_path,
                  key_store_passphrase):
-        # type: (str, str) -> self
+        # type: (str, bytes) -> self
         """
         Constructs a new Filesystem-backed Keystore with the given
         configuration.
 
         :param str key_store_path: the path to the private key store
-        :param str key_store_passphrase: the passphrase to decrypt the keys
+        :param bytes key_store_passphrase: the passphrase to decrypt the keys
         """
         self.key_store_path = os.path.expanduser(key_store_path)
         self.__key_store_passphrase = key_store_passphrase

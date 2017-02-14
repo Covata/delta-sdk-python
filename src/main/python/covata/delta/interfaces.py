@@ -24,9 +24,10 @@ class DeltaApiClient(object):
 
     DELTA_URL = 'https://delta.covata.io/v1'        # type: str
     RESOURCE_IDENTITIES = '/identities'             # type: str
+    RESOURCE_SECRETS = '/secrets'                   # type: str
 
     def __init__(self, keystore):
-        # type: (KeyStore) -> ApiClient
+        # type: (DeltaKeyStore) -> DeltaApiClient
         """
         Constructs a new Delta API client with the given configuration.
 
@@ -67,6 +68,17 @@ class DeltaApiClient(object):
         :param str identity_id: the identity id to retrieve
         :return: the retrieved identity
         :rtype: dict
+        """
+
+    @abstractmethod
+    def create_secret(self, requestor_id, content, encryption_details):
+        """
+        Creates a new secret in Delta. The key used for encryption should
+        be encrypted with the key of the authenticating identity.
+
+        :param str requestor_id: the authenticating identity id
+        :param bytes content: the contents of the secret
+        :param dict encryption_details: the encryption details
         """
 
 

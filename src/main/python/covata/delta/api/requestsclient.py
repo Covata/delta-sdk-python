@@ -18,6 +18,7 @@ import requests
 
 from covata.delta import DeltaApiClient, LogMixin, crypto
 from covata.delta.api.signer import CVTSigner
+from base64 import b64encode
 
 from requests.auth import AuthBase
 
@@ -54,6 +55,22 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
                 base_url=self.DELTA_URL,
                 resource=self.RESOURCE_IDENTITIES,
                 identity_id=identity_id),
+            auth=self.signer(requestor_id)).json()
+
+    def create_secret(self, requestor_id, content, encryption_details):
+        content_b64 = b64encode(content).decode('utf-8')
+        encryption_details_b64 = dict(
+            (k, b64encode(v).decode('utf-8') if isinstance(v, bytes) else v)
+            for k, v in encryption_details.items())
+
+        return requests.post(
+            url="{base_url}{resource}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS),
+            json=dict(
+                content=content_b64,
+                encryptionDetails=encryption_details_b64
+            ),
             auth=self.signer(requestor_id)).json()
 
     def signer(self, identity_id):
