@@ -39,9 +39,11 @@ class SignatureMaterial(namedtuple('SignatureMaterial', [
     'method',
     'uri',
     'query_params',
+    'headers_',
     'canonical_headers',
     'signed_headers',
-    'hashed_payload'
+    'hashed_payload',
+    'cvt_date'
 ])):
     def __init__(self, *args, **kwargs):
         super(SignatureMaterial, self).__init__()
@@ -53,9 +55,18 @@ class SignatureMaterial(namedtuple('SignatureMaterial', [
             self.signed_headers,
             self.hashed_payload])
 
+        self.__string_to_sign = "\n".join([
+            SIGNING_ALGORITHM,
+            self.cvt_date,
+            calculate_sha256hex(self.__canonical_request).decode('utf-8')])
+
     @property
     def canonical_request(self):
         return self.__canonical_request
+
+    @property
+    def string_to_sign(self):
+        return self.__string_to_sign
 
 
 class CVTSigner(LogMixin):
@@ -84,79 +95,77 @@ class CVTSigner(LogMixin):
             Authorization headers.
         :rtype: dict
         """
-        url_parsed = urllib.parse.urlparse(url)
-        cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)
-        headers_ = dict(headers)
-        headers_["Cvt-Date"] = cvt_date
-        headers_['Host'] = url_parsed.hostname
-        signature_materials = self.__get_materials(
-            method, url_parsed.path, url_parsed.query, headers_, payload)
-        canonical_request = signature_materials.canonical_request
-        self.logger.debug(canonical_request)
-        string_to_sign = "\n".join([
-            SIGNING_ALGORITHM,
-            cvt_date,
-            calculate_sha256hex(canonical_request).decode('utf-8')])
+        signature_materials = _get_signature_materials(
+            method, url, headers, payload)
 
-        self.logger.debug(string_to_sign)
-        signature = \
-            b64encode(self.__sign(string_to_sign, identity_id)).decode('utf-8')
-
+        self.logger.debug(signature_materials.canonical_request)
+        self.logger.debug(signature_materials.string_to_sign)
+        signature = self.__sign(signature_materials.string_to_sign, identity_id)
+        headers_ = signature_materials.headers_
         headers_["Authorization"] = \
             "{algorithm} Identity={identity_id}, " \
             "SignedHeaders={signed_headers}, Signature={signature}" \
             .format(algorithm=SIGNING_ALGORITHM,
                     identity_id=identity_id,
                     signed_headers=signature_materials.signed_headers,
-                    signature=signature)
+                    signature=b64encode(signature).decode('utf-8'))
         return headers_
 
     def __sign(self, string_to_sign, identity_id):
-        private_key = self.__keystore.load_signing_private_key(identity_id)
+        private_key = self.__keystore.get_private_signing_key(identity_id)
         return private_key.sign(string_to_sign.encode("utf-8"),
                                 padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                             salt_length=32),
                                 hashes.SHA256())
 
-    def __get_materials(self, method, path, query, headers, payload):
-        # type: (str, str, dict, dict, bytes or None) -> SignatureMaterial
-        # /master/identities/a123?key=an+arbitrary+value&key2=x
-        uri = self.__encode_uri("/".join(path.split("/")[2:]))
-        query = query.replace("+", "%20")
 
-        sorted_header = OrderedDict(sorted(
-            (k.lower(), re.sub("\s+", ' ', v).strip())
-            for k, v in headers.items()
-            if k not in UNDESIRED_HEADERS))
+def _get_signature_materials(method, url, headers, payload):
+    # type: (str, str, dict, bytes or None) -> SignatureMaterial
+    url_parsed = urllib.parse.urlparse(url)
+    cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)
+    headers_ = dict(headers)
+    headers_["Cvt-Date"] = cvt_date
+    headers_['Host'] = url_parsed.hostname
 
-        canonical_headers = "\n ".join(
-            "{}:{}".format(k, v) for (k, v) in sorted_header.items())
+    # /master/identities/a123?key=an+arbitrary+value&key2=x
+    uri = __encode_uri("/".join(url_parsed.path.split("/")[2:]))
+    query = url_parsed.query.replace("+", "%20")
 
-        signed_headers = ";".join(sorted_header.keys())
-        hashed_payload = self.__get_hashed_payload(payload)
+    sorted_header = OrderedDict(sorted(
+        (k.lower(), re.sub("\s+", ' ', v).strip())
+        for k, v in headers_.items()
+        if k not in UNDESIRED_HEADERS))
 
-        return SignatureMaterial(method=method,
-                                 uri=uri,
-                                 query_params=query,
-                                 canonical_headers=canonical_headers,
-                                 signed_headers=signed_headers,
-                                 hashed_payload=hashed_payload)
+    canonical_headers = "\n ".join(
+        "{}:{}".format(k, v) for (k, v) in sorted_header.items())
 
-    @staticmethod
-    def __get_hashed_payload(payload):
-        # type: (bytes) -> unicode
-        sorted_payload = "{}" if payload is None else json.dumps(
-            json.loads(payload.decode('utf-8')),
-            separators=(',', ':'),
-            sort_keys=True)
-        return calculate_sha256hex(sorted_payload).decode('utf-8')
+    signed_headers = ";".join(sorted_header.keys())
+    hashed_payload = __get_hashed_payload(payload)
 
-    @staticmethod
-    def __encode_uri(resource_path):
-        # type: (str) -> str
-        if resource_path is not "/":
-            uri_parsed = re.sub("^/+|/+$", "", resource_path)
-            quoted_uri = urllib.parse.quote(uri_parsed).replace("%7E", "~")
-            return "/{}/".format(quoted_uri)
-        else:
-            return resource_path
+    return SignatureMaterial(method=method,
+                             uri=uri,
+                             headers_=headers_,
+                             query_params=query,
+                             canonical_headers=canonical_headers,
+                             signed_headers=signed_headers,
+                             hashed_payload=hashed_payload,
+                             cvt_date=cvt_date)
+
+
+def __get_hashed_payload(payload):
+    # type: (bytes) -> unicode
+    sorted_payload = "{}" if payload is None else json.dumps(
+        json.loads(payload.decode('utf-8')),
+        separators=(',', ':'),
+        sort_keys=True)
+    return calculate_sha256hex(sorted_payload).decode('utf-8')
+
+
+def __encode_uri(resource_path):
+    # type: (str) -> str
+    if resource_path is not "/":
+        uri_parsed = re.sub("^/+|/+$", "", resource_path)
+        quoted_uri = urllib.parse.quote(uri_parsed).replace("%7E", "~")
+        return "/{}/".format(quoted_uri)
+    else:
+        return resource_path

@@ -43,7 +43,7 @@ An implementation of ``DeltaApiClient`` abstract base class using ``Requests``.
 CVTSigner
 ---------
 
-The Delta CVT Signer is utility class for signing outbound requests using
+The Delta CVT Signer is a utility class for signing outbound requests using
 the CVT1 signing scheme.
 
 .. autoclass:: CVTSigner

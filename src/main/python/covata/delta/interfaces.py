@@ -74,19 +74,22 @@ class DeltaApiClient(object):
 class DeltaKeyStore(object):
 
     @abstractmethod
-    def save(self, signing_private_key, crypto_private_key, identity_id):
+    def store_keys(self,
+                   identity_id,
+                   private_signing_key,
+                   private_encryption_key):
         """
-        Saves a private key object to the key store.
+        Stores the signing and encryption key pairs under a given identity id.
 
-        :param signing_private_key: the private signing key object
-        :type signing_private_key: :class:`RSAPrivateKey`
-        :param crypto_private_key: the private cryptographic key object
-        :type crypto_private_key: :class:`RSAPrivateKey`
         :param str identity_id: the identity id of the key owner
+        :param private_signing_key: the private signing key object
+        :type private_signing_key: :class:`RSAPrivateKey`
+        :param private_encryption_key: the private cryptographic key object
+        :type private_encryption_key: :class:`RSAPrivateKey`
         """
 
     @abstractmethod
-    def load_signing_private_key(self, identity_id):
+    def get_private_signing_key(self, identity_id):
         """
         Loads a private signing key instance for the given identity id.
 
@@ -95,9 +98,9 @@ class DeltaKeyStore(object):
         """
 
     @abstractmethod
-    def load_crypto_private_key(self, identity_id):
+    def get_private_encryption_key(self, identity_id):
         """
-        Loads a private cryptographic key instance for the given identity id.
+        Loads a private encryption key instance for the given identity id.
 
         :param str identity_id: the identity id of the key owner
         :return: the cryptographic private key object

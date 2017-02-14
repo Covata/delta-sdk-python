@@ -46,8 +46,8 @@ def test_register_identity(mocker, api_client, keystore, private_key,
                  return_value=private_key)
 
     identity_id = api_client.register_identity("1", {})
-    crypto_key = keystore.load_crypto_private_key(identity_id)
-    signing_key = keystore.load_signing_private_key(identity_id)
+    crypto_key = keystore.get_private_encryption_key(identity_id)
+    signing_key = keystore.get_private_signing_key(identity_id)
     assert identity_id == expected_id
     assert key2bytes(crypto_key) == key2bytes(private_key)
     assert key2bytes(signing_key) == key2bytes(private_key)
@@ -78,8 +78,8 @@ def test_get_identity(api_client, mock_signer):
 
 
 def test_construct_signer(mocker, api_client, keystore, private_key):
-    load_signing_private_key = mocker.patch.object(
-        keystore, 'load_signing_private_key', return_value=private_key)
+    get_private_signing_key = mocker.patch.object(
+        keystore, 'get_private_signing_key', return_value=private_key)
     signer = api_client.signer("mock_id")
 
     r = requests.Request(url='https://test.com/stage/resource',
@@ -87,4 +87,4 @@ def test_construct_signer(mocker, api_client, keystore, private_key):
                          headers=dict(someKey="some value"),
                          json=dict(content="abcd"))
     signer(r.prepare())
-    load_signing_private_key.assert_called_once_with("mock_id")
+    get_private_signing_key.assert_called_once_with("mock_id")

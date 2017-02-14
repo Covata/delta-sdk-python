@@ -39,15 +39,18 @@ class FileSystemKeyStore(DeltaKeyStore, LogMixin):
         self.key_store_path = os.path.expanduser(key_store_path)
         self.__key_store_passphrase = key_store_passphrase
 
-    def save(self, signing_private_key, crypto_private_key, identity_id):
+    def store_keys(self,
+                   identity_id,
+                   private_signing_key,
+                   private_encryption_key):
         # type: (RSAPrivateKey, RSAPrivateKey, str) -> None
-        self.__save(signing_private_key, "{}.signing.pem".format(identity_id))
-        self.__save(crypto_private_key, "{}.crypto.pem".format(identity_id))
+        self.__save(private_signing_key, "{}.signing.pem".format(identity_id))
+        self.__save(private_encryption_key, "{}.crypto.pem".format(identity_id))
 
-    def load_signing_private_key(self, identity_id):
+    def get_private_signing_key(self, identity_id):
         return self.__load("{}.signing.pem".format(identity_id))
 
-    def load_crypto_private_key(self, identity_id):
+    def get_private_encryption_key(self, identity_id):
         return self.__load("{}.crypto.pem".format(identity_id))
 
     def __save(self, private_key, file_name):

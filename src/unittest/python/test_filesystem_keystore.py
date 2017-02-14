@@ -23,8 +23,8 @@ def fs_keystore(temp_directory):
 
 
 def test_decrypt_private_key(fs_keystore, private_key, key2bytes):
-    fs_keystore.save(private_key, private_key, "mock")
-    retrieved = key2bytes(fs_keystore.load_signing_private_key("mock"))
+    fs_keystore.store_keys("mock", private_key, private_key)
+    retrieved = key2bytes(fs_keystore.get_private_signing_key("mock"))
     expected = key2bytes(private_key)
     assert retrieved == expected
 
@@ -32,14 +32,14 @@ def test_decrypt_private_key(fs_keystore, private_key, key2bytes):
 def test_encrypt_to_file(mocker, fs_keystore, private_key):
     mock_makedirs = mocker.patch('os.makedirs')
     mocker.patch('os.path.isdir', return_value=False)
-    fs_keystore.save(private_key, private_key, "mock.pem")
+    fs_keystore.store_keys("mock", private_key, private_key)
     mock_makedirs.assert_called_with(fs_keystore.key_store_path)
 
 
 def test_save__should__fail_when_key_exists(fs_keystore, private_key):
-    fs_keystore.save(private_key, private_key, "mock")
+    fs_keystore.store_keys("mock", private_key, private_key)
     with pytest.raises(IOError) as excinfo:
-        fs_keystore.save(private_key, private_key, "mock")
+        fs_keystore.store_keys("mock", private_key, private_key)
     expected = \
         "Save failed: A key with name [mock.signing.pem] exists in keystore"
     assert expected in str(excinfo.value)
@@ -47,6 +47,6 @@ def test_save__should__fail_when_key_exists(fs_keystore, private_key):
 
 def test_save__should__fail_when_type_is_not_rsaprivatekey(fs_keystore):
     with pytest.raises(TypeError) as excinfo:
-        fs_keystore.save("key", "crypto_key", "mock.pem")
+        fs_keystore.store_keys("mock_id", "key", "crypto_key")
     expected = "private_key must be an instance of RSAPrivateKey, actual: str"
     assert expected in str(excinfo.value)

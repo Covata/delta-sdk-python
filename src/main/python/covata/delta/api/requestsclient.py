@@ -24,15 +24,15 @@ from requests.auth import AuthBase
 
 class RequestsApiClient(DeltaApiClient, LogMixin):
     def register_identity(self, external_id=None, metadata=None):
-        signing_private_key = crypto.generate_private_key()
-        crypto_private_key = crypto.generate_private_key()
+        private_signing_key = crypto.generate_private_key()
+        private_encryption_key = crypto.generate_private_key()
 
-        signing_public_key = signing_private_key.public_key()
-        crypto_public_key = crypto_private_key.public_key()
+        public_signing_key = private_signing_key.public_key()
+        public_encryption_key = private_encryption_key.public_key()
 
         body = dict(
-            signingPublicKey=crypto.serialize_public_key(signing_public_key),
-            cryptoPublicKey=crypto.serialize_public_key(crypto_public_key),
+            signingPublicKey=crypto.serialize_public_key(public_signing_key),
+            cryptoPublicKey=crypto.serialize_public_key(public_encryption_key),
             externalId=external_id,
             metadata=metadata)
 
@@ -42,9 +42,10 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
 
         identity_id = response.json()['identityId']
 
-        self.keystore.save(signing_private_key=signing_private_key,
-                           crypto_private_key=crypto_private_key,
-                           identity_id=identity_id)
+        self.keystore.store_keys(
+            identity_id=identity_id,
+            private_signing_key=private_signing_key,
+            private_encryption_key=private_encryption_key)
         return identity_id
 
     def get_identity(self, requestor_id, identity_id):
