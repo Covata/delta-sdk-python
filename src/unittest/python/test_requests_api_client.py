@@ -77,6 +77,30 @@ def test_get_identity(api_client, mock_signer):
     assert response == expected_json
 
 
+@responses.activate
+def test_create_secret(api_client, mock_signer):
+    expected_json = dict(id="mock_secret_id",
+                         href="https://test.com/v1/mock_secret_id")
+
+    responses.add(responses.POST,
+                  "{base_path}{resource}".format(
+                      base_path=DeltaApiClient.DELTA_URL,
+                      resource=DeltaApiClient.RESOURCE_SECRETS),
+                  status=201,
+                  json=expected_json)
+
+    response = api_client.create_secret(
+        requestor_id="requestor_id",
+        content=b"123",
+        encryption_details=dict(
+            symmetricKey=b"1234",
+            initialisationVector=b"1312"))
+
+    mock_signer.assert_called_once_with("requestor_id")
+
+    assert response == expected_json
+
+
 def test_construct_signer(mocker, api_client, keystore, private_key):
     get_private_signing_key = mocker.patch.object(
         keystore, 'get_private_signing_key', return_value=private_key)
