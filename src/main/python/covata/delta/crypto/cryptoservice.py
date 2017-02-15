@@ -39,6 +39,10 @@ def generate_private_key():
 
     >>> private_key = generate_private_key() # generate a private key
     >>> public_key = private_key.public_key() # get associated public key
+    >>> isinstance(private_key, rsa.RSAPrivateKey)
+    True
+    >>> isinstance(public_key, rsa.RSAPublicKey)
+    True
 
     :return: the generated private key object
     """
@@ -121,11 +125,11 @@ def encrypt(data, secret_key, initialization_vector):
     """
     Encrypts data using the given secret key and initialization vector.
 
-    >>> from covata.delta import crypto
-    >>> secret_key = crypto.generate_secret_key()
-    >>> iv = crypto.generate_initialization_vector()
-    >>> ciphertext, tag = crypto.encrypt(b"secret message", secret_key, iv)
-    >>> plaintext = crypto.decrypt(cipher_text, tag, secret_key, iv)
+    >>> secret_key = generate_secret_key()
+    >>> iv = generate_initialization_vector()
+    >>> ciphertext, tag = encrypt(b'secret message', secret_key, iv)
+    >>> decrypt(ciphertext, tag, secret_key, iv)
+    b'secret message'
 
     :param bytes data: the plaintext bytes to be encrypted
     :param secret_key: the key to be used for encryption
@@ -138,9 +142,9 @@ def encrypt(data, secret_key, initialization_vector):
                                    min_tag_length=16),
                     backend=default_backend())
     encryptor = cipher.encryptor()
-    cipher_text = encryptor.update(data) + encryptor.finalize()
+    ciphertext = encryptor.update(data) + encryptor.finalize()
 
-    return cipher_text, encryptor.tag
+    return ciphertext, encryptor.tag
 
 
 def decrypt(ciphertext, tag, secret_key, initialization_vector):
@@ -168,6 +172,20 @@ def encrypt_key_with_public_key(secret_key, public_encryption_key):
     # type: (bytes, rsa.RSAPublicKey) -> bytes
     """
     Encrypts the given secret key with the public key.
+
+    >>> private_encryption_key = generate_private_key()
+    >>> public_encryption_key = private_encryption_key.public_key()
+    >>> secret_key = generate_secret_key()
+    >>>
+    >>> # encrypt key with public key
+    >>> encrypted_secret_key = encrypt_key_with_public_key(
+    ...     secret_key, public_encryption_key)
+    >>>
+    >>> # decrypt with private key
+    >>> decrypted_secret_key = decrypt_with_private_key(
+    ...     encrypted_secret_key, private_encryption_key)
+    >>> decrypted_secret_key == secret_key
+    True
 
     :param bytes secret_key: the key to encrypt
     :param public_encryption_key: the public encryption key
