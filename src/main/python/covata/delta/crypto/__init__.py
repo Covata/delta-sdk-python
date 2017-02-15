@@ -16,10 +16,13 @@ from __future__ import absolute_import
 
 from .cryptoservice import serialize_public_key, calculate_sha256hex, \
     generate_private_key, generate_initialization_vector, generate_secret_key, \
-    encrypt, decrypt
+    encrypt, decrypt, encrypt_key_with_public_key, decrypt_with_private_key, \
+    deserialize_public_key
 from .keystore import FileSystemKeyStore
 
 __all__ = ["FileSystemKeyStore",
            "serialize_public_key", "calculate_sha256hex",
            "generate_private_key", "generate_initialization_vector",
-           "generate_secret_key", "encrypt", "decrypt"]
+           "generate_secret_key", "encrypt", "decrypt",
+           "encrypt_key_with_public_key", "decrypt_with_private_key",
+           "deserialize_public_key"]

@@ -20,12 +20,15 @@ from binascii import hexlify
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 __all__ = ["generate_private_key", "serialize_public_key",
            "calculate_sha256hex", "generate_secret_key",
-           "generate_initialization_vector", "encrypt", "decrypt"]
+           "generate_initialization_vector", "encrypt", "decrypt",
+           "encrypt_key_with_public_key", "decrypt_with_private_key",
+           "deserialize_public_key"]
 
 
 def generate_private_key():
@@ -50,8 +53,8 @@ def serialize_public_key(public_key):
     Serializes the provided public key object as base-64-encoded DER format
     using X.509 SubjectPublicKeyInfo with PKCS1.
 
-    :param public_key: the public Key object
-    :type public_key: :class:`RSAPublicKey`
+    :param public_key: the public key object
+    :type public_key: :class:`~rsa.RSAPublicKey`
     :return: the key as base64 encoded unicode string
     :rtype: str
     """
@@ -59,6 +62,19 @@ def serialize_public_key(public_key):
         encoding=serialization.Encoding.DER,
         format=serialization.PublicFormat.SubjectPublicKeyInfo)
     return base64.b64encode(der).decode(encoding='utf-8')
+
+
+def deserialize_public_key(b64_encoded_public_key):
+    """
+    loads a :class:`~rsa.RSAPublicKey` object from a serialized public key.
+
+    :param str b64_encoded_public_key: the key as base64 encoded string
+    :return: the public key object
+    :rtype: :class:`~rsa.RSAPublicKey`
+    """
+    return serialization.load_der_public_key(
+        data=base64.b64decode(b64_encoded_public_key.encode('utf-8')),
+        backend=default_backend())
 
 
 def calculate_sha256hex(payload):
@@ -146,3 +162,41 @@ def decrypt(ciphertext, tag, secret_key, initialization_vector):
                     backend=default_backend())
     decryptor = cipher.decryptor()
     return decryptor.update(ciphertext) + decryptor.finalize()
+
+
+def encrypt_key_with_public_key(secret_key, public_encryption_key):
+    # type: (bytes, rsa.RSAPublicKey) -> bytes
+    """
+    Encrypts the given secret key with the public key.
+
+    :param bytes secret_key: the key to encrypt
+    :param public_encryption_key: the public encryption key
+    :type public_encryption_key: :class:`~rsa.RSAPublicKey`
+    :return: the encrypted key
+    :rtype: bytes
+    """
+    return public_encryption_key.encrypt(
+        secret_key,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None))
+
+
+def decrypt_with_private_key(secret_key, private_encryption_key):
+    # type: (bytes, rsa.RSAPrivateKey) -> bytes
+    """
+    Decrypts the given secret key with the private key.
+
+    :param bytes secret_key: the secret key to decrypt
+    :param private_encryption_key: the private encryption key
+    :type private_encryption_key: :class:`~rsa.RSAPrivateKey`
+    :return: the decrypted key
+    :rtype: bytes
+    """
+    return private_encryption_key.decrypt(
+        secret_key,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None))
