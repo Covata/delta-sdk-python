@@ -82,7 +82,7 @@ def generate_initialization_vector():
 
     Uses ``/dev/urandom`` on UNIX platforms, and ``CryptGenRandom`` on Windows.
 
-    :return: the initialization vector
+    :return: the 128 bits initialization vector
     :rtype: bytes
     """
     return os.urandom(16)
@@ -94,7 +94,7 @@ def generate_secret_key():
 
     Uses ``/dev/urandom`` on UNIX platforms, and ``CryptGenRandom`` on Windows.
 
-    :return: the initialization vector
+    :return: the 256 bits secret key
     :rtype: bytes
     """
     return os.urandom(32)
