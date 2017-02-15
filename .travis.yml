@@ -1,14 +1,13 @@
+dist: trusty
 language: python
 python:
   - 2.7
   - 3.3
   - 3.5
 before_install:
-  - curl https://www.openssl.org/source/openssl-1.0.2g.tar.gz | tar xz
-  - cd openssl-1.0.2g && sudo ./config && sudo make && sudo make install
-  - sudo ln -sf /usr/local/ssl/bin/openssl 'which openssl'
-  - openssl version -v
-  - cd ..
+  - sudo add-apt-repository ppa:0k53d-karl-f830m/openssl -y
+  - sudo apt-get update
+  - sudo apt-get install openssl
 install:
   - pip install pytest==3.0.6
   - pip install pytest-cov pybuilder coveralls pytest-mock mock responses
