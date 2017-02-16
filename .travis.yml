@@ -1,8 +1,13 @@
+dist: trusty
 language: python
 python:
   - 2.7
   - 3.3
   - 3.5
+before_install:
+  - sudo add-apt-repository ppa:0k53d-karl-f830m/openssl -y
+  - sudo apt-get update
+  - sudo apt-get install openssl
 install:
   - pip install pytest==3.0.6
   - pip install pytest-cov pybuilder coveralls pytest-mock mock responses
