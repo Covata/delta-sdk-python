@@ -80,7 +80,14 @@ class CVTSigner(LogMixin):
         """
         self.__keystore = keystore
 
-    def get_signed_headers(self, identity_id, method, url, headers, payload):
+    def get_signed_headers(self,
+                           identity_id,     # type: str
+                           method,          # type: str
+                           url,             # type: str
+                           headers,         # type: Dict[str, str]
+                           payload          # type: Optional[bytes]
+                           ):
+        # type: (...) -> Dict[str, str]
         """
         Gets an updated header dictionary with an authorization header
         signed using the CVT1 request signing scheme.
@@ -88,12 +95,14 @@ class CVTSigner(LogMixin):
         :param str identity_id: the authorizing identity id
         :param str method: the HTTP request method
         :param str url: the delta url
-        :param dict headers: the request headers
+        :param headers: the request headers
+        :type headers: Dict[str, str]
         :param payload: the request payload
+        :type payload: Optional[bytes]
         :return:
             the original headers with additional Cvt-Date, Host, and
             Authorization headers.
-        :rtype: dict
+        :rtype: Dict[str, str]
         """
         signature_materials = _get_signature_materials(
             method, url, headers, payload)
@@ -120,7 +129,7 @@ class CVTSigner(LogMixin):
 
 
 def _get_signature_materials(method, url, headers, payload):
-    # type: (str, str, dict, bytes or None) -> SignatureMaterial
+    # type: (str, str, Dict[str, str], Optional[bytes]) -> SignatureMaterial
     url_parsed = urllib.parse.urlparse(url)
     cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)
     headers_ = dict(headers)
@@ -153,7 +162,7 @@ def _get_signature_materials(method, url, headers, payload):
 
 
 def __get_hashed_payload(payload):
-    # type: (bytes) -> unicode
+    # type: (bytes) -> str
     sorted_payload = "{}" if payload is None else json.dumps(
         json.loads(payload.decode('utf-8')),
         separators=(',', ':'),

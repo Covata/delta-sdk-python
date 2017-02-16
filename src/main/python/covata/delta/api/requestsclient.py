@@ -18,8 +18,7 @@ import requests
 
 from covata.delta import DeltaApiClient, LogMixin, crypto
 from covata.delta.api.signer import CVTSigner
-from base64 import b64encode
-
+from base64 import b64encode, b64decode
 from requests.auth import AuthBase
 
 
@@ -40,7 +39,7 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
         response = requests.post(
             url=self.DELTA_URL + self.RESOURCE_IDENTITIES,
             json=dict((k, v) for k, v in body.items() if v is not None))
-
+        response.raise_for_status()
         identity_id = response.json()['identityId']
 
         self.keystore.store_keys(
@@ -50,20 +49,22 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
         return identity_id
 
     def get_identity(self, requestor_id, identity_id):
-        return requests.get(
+        response = requests.get(
             url="{base_url}{resource}/{identity_id}".format(
                 base_url=self.DELTA_URL,
                 resource=self.RESOURCE_IDENTITIES,
                 identity_id=identity_id),
-            auth=self.signer(requestor_id)).json()
+            auth=self.signer(requestor_id))
+        response.raise_for_status()
+        return response.json()
 
     def create_secret(self, requestor_id, content, encryption_details):
         content_b64 = b64encode(content).decode('utf-8')
         encryption_details_b64 = dict(
-            (k, b64encode(v).decode('utf-8') if isinstance(v, bytes) else v)
+            (k, b64encode(v).decode('utf-8'))
             for k, v in encryption_details.items())
 
-        return requests.post(
+        response = requests.post(
             url="{base_url}{resource}".format(
                 base_url=self.DELTA_URL,
                 resource=self.RESOURCE_SECRETS),
@@ -71,10 +72,62 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
                 content=content_b64,
                 encryptionDetails=encryption_details_b64
             ),
-            auth=self.signer(requestor_id)).json()
+            auth=self.signer(requestor_id))
+
+        response.raise_for_status()
+        return response.json()
+
+    def get_secret_content(self, requestor_id, secret_id):
+        response = requests.get(
+            url="{base_url}{resource}/{secret_id}/content".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS,
+                secret_id=secret_id),
+            auth=self.signer(requestor_id))
+
+        response.raise_for_status()
+        return b64decode(response.json())
+
+    def get_secret_metadata(self, requestor_id, secret_id):
+        response = requests.get(
+            url="{base_url}{resource}/{secret_id}/metadata".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS,
+                secret_id=secret_id),
+            auth=self.signer(requestor_id))
+
+        response.raise_for_status()
+        return response.json(), int(response.headers["ETag"])
+
+    def get_secret(self, requestor_id, secret_id):
+        response = requests.get(
+            url="{base_url}{resource}/{secret_id}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS,
+                secret_id=secret_id),
+            auth=self.signer(requestor_id))
+        response.raise_for_status()
+        secret = response.json()
+        for k, v in secret["encryptionDetails"].items():
+            secret["encryptionDetails"][k] = b64decode(v)
+        return secret
+
+    def update_secret_metadata(self, requestor_id, secret_id, metadata,
+                               version):
+        response = requests.put(
+            url="{base_url}{resource}/{secret_id}/metadata".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS,
+                secret_id=secret_id),
+            headers={
+                "if-match": str(version)
+            },
+            json=metadata,
+            auth=self.signer(requestor_id))
+
+        response.raise_for_status()
 
     def signer(self, identity_id):
-        # type: (str) -> RequestsCVTSigner
         """
         Instantiates a new :class:`~covata.delta.api.RequestsCVTSigner` for
         the authorizing identity using this :class:`~.RequestsApiClient`.
@@ -124,8 +177,8 @@ class RequestsCVTSigner(AuthBase, CVTSigner, LogMixin):
         >>> prepared_request = request.prepare()
         >>> signer(prepared_request)
 
-        :param keystore: The KeyStore object
-        :type keystore: :class:`~covata.delta.KeyStore`
+        :param keystore: The DeltaKeyStore object
+        :type keystore: :class:`~covata.delta.DeltaKeyStore`
 
         :param str identity_id: the authorizing identity id
         """

@@ -32,7 +32,6 @@ __all__ = ["generate_private_key", "serialize_public_key",
 
 
 def generate_private_key():
-    # type: () -> rsa.RSAPrivateKey
     """
     Generates an RSA private key object. The public key object can be
     extracted by calling public_key() method on the generated key object.
@@ -45,6 +44,7 @@ def generate_private_key():
     True
 
     :return: the generated private key object
+    :rtype: :class:`~rsa.RSAPrivateKey`
     """
     return rsa.generate_private_key(public_exponent=65537,
                                     key_size=4096,
@@ -52,7 +52,6 @@ def generate_private_key():
 
 
 def serialize_public_key(public_key):
-    # type: (rsa.RSAPublicKey) -> unicode
     """
     Serializes the provided public key object as base-64-encoded DER format
     using X.509 SubjectPublicKeyInfo with PKCS1.
@@ -70,7 +69,7 @@ def serialize_public_key(public_key):
 
 def deserialize_public_key(b64_encoded_public_key):
     """
-    loads a :class:`~rsa.RSAPublicKey` object from a serialized public key.
+    loads an RSAPublicKey object from a serialized public key.
 
     :param str b64_encoded_public_key: the key as base64 encoded string
     :return: the public key object
@@ -89,7 +88,6 @@ def calculate_sha256hex(payload):
     :return: SHA256 hex digest
     :rtype: bytes
     """
-    # type: (str) -> bytes
     digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
     digest.update(payload if payload is bytes else payload.encode('utf-8'))
     x = digest.finalize()  # type: bytes
@@ -121,7 +119,6 @@ def generate_secret_key():
 
 
 def encrypt(data, secret_key, initialization_vector):
-    # type: (bytes, bytes, bytes) -> (bytes, bytes)
     """
     Encrypts data using the given secret key and initialization vector.
 
@@ -132,10 +129,10 @@ def encrypt(data, secret_key, initialization_vector):
     b'secret message'
 
     :param bytes data: the plaintext bytes to be encrypted
-    :param secret_key: the key to be used for encryption
-    :param initialization_vector: the initialisation vector
+    :param bytes secret_key: the key to be used for encryption
+    :param bytes initialization_vector: the initialisation vector
     :return: the ciphertext and GCM authentication tag tuple
-    :rtype: tuple(bytes, bytes)
+    :rtype: (bytes, bytes)
     """
     cipher = Cipher(algorithm=algorithms.AES(secret_key),
                     mode=modes.GCM(initialization_vector=initialization_vector,
@@ -148,7 +145,6 @@ def encrypt(data, secret_key, initialization_vector):
 
 
 def decrypt(ciphertext, tag, secret_key, initialization_vector):
-    # type: (bytes, bytes, bytes, bytes) -> bytes
     """
     Decrypts a cipher text using the given GCM authentication tag,
     secret key and initialization vector.
@@ -169,7 +165,6 @@ def decrypt(ciphertext, tag, secret_key, initialization_vector):
 
 
 def encrypt_key_with_public_key(secret_key, public_encryption_key):
-    # type: (bytes, rsa.RSAPublicKey) -> bytes
     """
     Encrypts the given secret key with the public key.
 
@@ -202,7 +197,6 @@ def encrypt_key_with_public_key(secret_key, public_encryption_key):
 
 
 def decrypt_with_private_key(secret_key, private_encryption_key):
-    # type: (bytes, rsa.RSAPrivateKey) -> bytes
     """
     Decrypts the given secret key with the private key.
 

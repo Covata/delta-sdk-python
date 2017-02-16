@@ -42,32 +42,27 @@ class DeltaApiClient(object):
 
     @abstractmethod
     def register_identity(self, external_id=None, metadata=None):
-        # type: (str or None, dict or None) -> str
         """
         Creates a new identity in Delta with the provided metadata
         and external id.
 
-        :param Optional[str] external_id:
-            the external id to associate with the identity
-
-        :param Optional[dict] metadata:
-            the metadata to associate with the identity
-
+        :param external_id: the external id to associate with the identity
+        :param metadata: the metadata to associate with the identity
         :return: the id of the newly created identity
-
+        :type external_id: Optional[str]
+        :type metadata: Optional[Dict[str, str]]
         :rtype: str
         """
 
     @abstractmethod
     def get_identity(self, requestor_id, identity_id):
-        # type: (str, str) -> dict
         """
         Gets the identity matching the given identity id.
 
         :param str requestor_id: the authenticating identity id
         :param str identity_id: the identity id to retrieve
         :return: the retrieved identity
-        :rtype: dict
+        :rtype: Dict[str, Any]
         """
 
     @abstractmethod
@@ -78,7 +73,65 @@ class DeltaApiClient(object):
 
         :param str requestor_id: the authenticating identity id
         :param bytes content: the contents of the secret
-        :param dict encryption_details: the encryption details
+        :param encryption_details: the encryption details
+        :type encryption_details: Dict[str, bytes]
+        :return: the created secret
+        :rtype: Dict[str, str]
+        """
+
+    @abstractmethod
+    def get_secret(self, requestor_id, secret_id):
+        """
+        Gets the given secret. This does not include the metadata and contents,
+        they need to be made as separate requests,
+        :func:`~.DeltaApiClient.get_secret_metadata`
+        and :func:`~.DeltaApiClient.get_secret_content` respectively.
+
+        :param str requestor_id: the authenticating identity id
+        :param str secret_id: the secret id to be retrieved
+        :return: the retrieved secret
+        :rtype: Dict[str, Any]
+        """
+
+    @abstractmethod
+    def get_secret_metadata(self, requestor_id, secret_id):
+        """
+        Gets the metadata key and value pairs for the given secret.
+
+        :param str requestor_id: the authenticating identity id
+        :param str secret_id: the secret id to be retrieved
+        :return: the retrieved secret metadata dictionary and version tuple
+        :rtype: Tuple[Dict[str, str], int]
+        """
+
+    @abstractmethod
+    def get_secret_content(self, requestor_id, secret_id):
+        """
+        Gets the contents of the given secret.
+
+        :param str requestor_id: the authenticating identity id
+        :param str secret_id: the secret id to be retrieved
+        :return: the retrieved secret
+        :rtype: bytes
+        """
+
+    @abstractmethod
+    def update_secret_metadata(self,
+                               requestor_id,
+                               secret_id,
+                               metadata,
+                               version):
+        """
+        Updates the metadata of the given secret given the version number.
+        The version of a secret's metadata can be obtained by calling
+        :func:`~.DeltaApiClient.get_secret_content`.
+        A newly created base secret has a metadata version of 1.
+
+        :param str requestor_id: the authenticating identity id
+        :param str secret_id: the secret id to be retrieved
+        :param metadata: metadata dictionary
+        :type metadata: Dict[str, str]
+        :param int version: metadata version, required for optimistic locking
         """
 
 
