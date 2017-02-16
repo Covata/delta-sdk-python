@@ -89,13 +89,12 @@ class CVTSigner(LogMixin):
         :param str method: the HTTP request method
         :param str url: the delta url
         :param headers: the request headers
-        :type headers: Dict[str, str]
-        :param payload: the request payload
-        :type payload: Optional[bytes]
+        :type headers: dict[str, str]
+        :param bytes payload: the request payload
         :return:
             the original headers with additional Cvt-Date, Host, and
             Authorization headers.
-        :rtype: Dict[str, str]
+        :rtype: dict[str, str]
         """
         signature_materials = _get_signature_materials(
             method, url, headers, payload)
@@ -122,7 +121,7 @@ class CVTSigner(LogMixin):
 
 
 def _get_signature_materials(method, url, headers, payload):
-    # type: (str, str, dict, bytes or None) -> SignatureMaterial
+    # type: (str, str, dict, bytes) -> SignatureMaterial
     url_parsed = urllib.parse.urlparse(url)
     cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)
     headers_ = dict(headers)

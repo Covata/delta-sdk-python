@@ -49,8 +49,8 @@ class DeltaApiClient(object):
         :param external_id: the external id to associate with the identity
         :param metadata: the metadata to associate with the identity
         :return: the id of the newly created identity
-        :type external_id: Optional[str]
-        :type metadata: Optional[Dict[str, str]]
+        :type external_id: str | None
+        :type metadata: dict[str, str] | None
         :rtype: str
         """
 
@@ -62,7 +62,7 @@ class DeltaApiClient(object):
         :param str requestor_id: the authenticating identity id
         :param str identity_id: the identity id to retrieve
         :return: the retrieved identity
-        :rtype: Dict[str, Any]
+        :rtype: dict[str, object]
         """
 
     @abstractmethod
@@ -74,9 +74,9 @@ class DeltaApiClient(object):
         :param str requestor_id: the authenticating identity id
         :param bytes content: the contents of the secret
         :param encryption_details: the encryption details
-        :type encryption_details: Dict[str, bytes]
+        :type encryption_details: dict[str, bytes]
         :return: the created secret
-        :rtype: Dict[str, str]
+        :rtype: dict[str, str]
         """
 
     @abstractmethod
@@ -90,7 +90,7 @@ class DeltaApiClient(object):
         :param str requestor_id: the authenticating identity id
         :param str secret_id: the secret id to be retrieved
         :return: the retrieved secret
-        :rtype: Dict[str, Any]
+        :rtype: dict[str, object]
         """
 
     @abstractmethod
@@ -101,7 +101,7 @@ class DeltaApiClient(object):
         :param str requestor_id: the authenticating identity id
         :param str secret_id: the secret id to be retrieved
         :return: the retrieved secret metadata dictionary and version tuple
-        :rtype: Tuple[Dict[str, str], int]
+        :rtype: (dict[str, str], int)
         """
 
     @abstractmethod
@@ -130,7 +130,7 @@ class DeltaApiClient(object):
         :param str requestor_id: the authenticating identity id
         :param str secret_id: the secret id to be retrieved
         :param metadata: metadata dictionary
-        :type metadata: Dict[str, str]
+        :type metadata: dict[str, str]
         :param int version: metadata version, required for optimistic locking
         """
 
