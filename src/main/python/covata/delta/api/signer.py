@@ -75,8 +75,8 @@ class CVTSigner(LogMixin):
         Creates a Request Signer object to sign a request
         using the CVT1 request signing scheme.
 
-        :param keystore: The KeyStore object
-        :type keystore: :class:`~covata.delta.KeyStore`
+        :param keystore: The DeltaKeyStore object
+        :type keystore: :class:`~covata.delta.DeltaKeyStore`
         """
         self.__keystore = keystore
 
@@ -88,12 +88,13 @@ class CVTSigner(LogMixin):
         :param str identity_id: the authorizing identity id
         :param str method: the HTTP request method
         :param str url: the delta url
-        :param dict headers: the request headers
-        :param payload: the request payload
+        :param headers: the request headers
+        :type headers: dict[str, str]
+        :param bytes payload: the request payload
         :return:
             the original headers with additional Cvt-Date, Host, and
             Authorization headers.
-        :rtype: dict
+        :rtype: dict[str, str]
         """
         signature_materials = _get_signature_materials(
             method, url, headers, payload)
@@ -120,7 +121,7 @@ class CVTSigner(LogMixin):
 
 
 def _get_signature_materials(method, url, headers, payload):
-    # type: (str, str, dict, bytes or None) -> SignatureMaterial
+    # type: (str, str, dict, bytes) -> SignatureMaterial
     url_parsed = urllib.parse.urlparse(url)
     cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)
     headers_ = dict(headers)
