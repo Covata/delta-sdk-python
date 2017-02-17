@@ -139,7 +139,7 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
         >>> signer = api_client.signer(authorizing_identity)
 
         :param str identity_id: the authorizing identity id
-        :return: the RequestsCVTSigner object
+        :return: the :class:`~.RequestsCVTSigner` object
         :rtype: :class:`~.RequestsCVTSigner`
         """
         return RequestsCVTSigner(self.keystore, identity_id)
@@ -151,7 +151,7 @@ class RequestsCVTSigner(AuthBase, CVTSigner, LogMixin):
         Creates a Request Signer object to sign a :class:`~requests.Request`
         object using the CVT1 request signing scheme.
 
-        The :class:`~.RequestsSigner` can be instantiated directly using its
+        The :class:`~.RequestsCVTSigner` can be instantiated directly using its
         constructor:
 
         >>> signer = RequestsCVTSigner(keystore, authorizing_identity)
@@ -186,7 +186,7 @@ class RequestsCVTSigner(AuthBase, CVTSigner, LogMixin):
         >>> "Authorization" in request.headers
         True
 
-        :param keystore: The DeltaKeyStore object
+        :param keystore: The :class:`~covata.delta.DeltaKeyStore` object
         :type keystore: :class:`~covata.delta.DeltaKeyStore`
 
         :param str identity_id: the authorizing identity id

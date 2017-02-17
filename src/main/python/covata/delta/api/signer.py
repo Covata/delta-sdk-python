@@ -75,8 +75,8 @@ class CVTSigner(LogMixin):
         Creates a Request Signer object to sign a request
         using the CVT1 request signing scheme.
 
-        :param keystore: The KeyStore object
-        :type keystore: :class:`~covata.delta.KeyStore`
+        :param keystore: The DeltaKeyStore object
+        :type keystore: :class:`~covata.delta.DeltaKeyStore`
         """
         self.__keystore = keystore
 
