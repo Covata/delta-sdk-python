@@ -12,7 +12,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import json
 import uuid
+from base64 import b64decode, b64encode
 
 import pytest
 import requests
@@ -89,16 +91,137 @@ def test_create_secret(api_client, mock_signer):
                   status=201,
                   json=expected_json)
 
+    content = b"123"
+    key = b"1234"
+    iv = b"1312"
     response = api_client.create_secret(
         requestor_id="requestor_id",
-        content=b"123",
+        content=content,
         encryption_details=dict(
-            symmetricKey=b"1234",
-            initialisationVector=b"1312"))
+            symmetricKey=key,
+            initialisationVector=iv))
 
     mock_signer.assert_called_once_with("requestor_id")
 
+    assert len(responses.calls) == 1
     assert response == expected_json
+
+    request_json = json.loads(responses.calls[0].request.body.decode("utf-8"))
+    encryption_details = request_json["encryptionDetails"]
+
+    assert b64decode(request_json["content"]) == content
+    assert b64decode(encryption_details["symmetricKey"]) == key
+    assert b64decode(encryption_details["initialisationVector"]) == iv
+
+
+@responses.activate
+def test_update_metadata(api_client, mock_signer):
+    responses.add(responses.PUT,
+                  "{base_path}{resource}/{secret_id}/metadata".format(
+                      base_path=DeltaApiClient.DELTA_URL,
+                      resource=DeltaApiClient.RESOURCE_SECRETS,
+                      secret_id="mock_id"),
+                  status=204)
+
+    metadata = dict(metadata_key="metadata value")
+    api_client.update_secret_metadata(requestor_id="requestor_id",
+                                      secret_id="mock_id",
+                                      metadata=metadata,
+                                      version=1)
+
+    mock_signer.assert_called_once_with("requestor_id")
+
+    assert len(responses.calls) == 1
+    assert responses.calls[0].request.headers["if-match"] == str(1)
+
+    request_json = json.loads(responses.calls[0].request.body.decode("utf-8"))
+    assert request_json == metadata
+
+
+@responses.activate
+def test_get_secret(api_client, mock_signer):
+    requestor_id = "requestor_id"
+    secret_id = "secret_id"
+    key = b"12331"
+    iv = b"1242"
+
+    response_json = dict(
+        id=secret_id,
+        created="2017-02-17T03:03:12Z",
+        createdBy=requestor_id,
+        href="https://delta.covata.io/v1/secrets/" + secret_id,
+        rsaKeyOwner=requestor_id,
+        encryptionDetails=dict(
+            symmetricKey=b64encode(key).decode("utf-8"),
+            initialisationVector=b64encode(iv).decode("utf-8")
+        ))
+
+    expected_json = dict(response_json, encryptionDetails=dict(
+        symmetricKey=key,
+        initialisationVector=iv
+    ))
+
+    responses.add(responses.GET,
+                  "{base_path}{resource}/{secret_id}".format(
+                      base_path=DeltaApiClient.DELTA_URL,
+                      resource=DeltaApiClient.RESOURCE_SECRETS,
+                      secret_id=secret_id),
+                  status=200,
+                  json=response_json)
+
+    response = api_client.get_secret(requestor_id, secret_id)
+
+    mock_signer.assert_called_once_with(requestor_id)
+
+    assert response == expected_json
+
+
+@responses.activate
+def test_get_secret_metadata(api_client, mock_signer):
+    response_json = dict(metadata_key="metadata value")
+    requestor_id = "requestor_id"
+    secret_id = "secret_id"
+    expected_version = 1
+
+    def request_callback(request):
+        resp_body = response_json
+        headers = {'etag': str(expected_version)}
+        return 200, headers, json.dumps(resp_body)
+
+    responses.add_callback(
+        responses.GET,
+        "{base_path}{resource}/{secret_id}/metadata".format(
+            base_path=DeltaApiClient.DELTA_URL,
+            resource=DeltaApiClient.RESOURCE_SECRETS,
+            secret_id=secret_id),
+        callback=request_callback,
+        content_type='application/json')
+
+    metadata, version = api_client.get_secret_metadata(requestor_id, secret_id)
+    mock_signer.assert_called_once_with(requestor_id)
+
+    assert metadata == response_json
+    assert version == expected_version
+
+
+@responses.activate
+def test_get_secret_content(api_client, mock_signer):
+    requestor_id = "requestor_id"
+    secret_id = "secret_id"
+    expected_content = b"123456"
+
+    responses.add(
+        responses.GET,
+        "{base_path}{resource}/{secret_id}/content".format(
+            base_path=DeltaApiClient.DELTA_URL,
+            resource=DeltaApiClient.RESOURCE_SECRETS,
+            secret_id=secret_id),
+        json=b64encode(expected_content).decode("utf-8"))
+
+    retrieved_content = api_client.get_secret_content(requestor_id, secret_id)
+    mock_signer.assert_called_once_with(requestor_id)
+
+    assert retrieved_content == expected_content
 
 
 def test_construct_signer(mocker, api_client, keystore, private_key):
