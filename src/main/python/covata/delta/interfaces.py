@@ -62,7 +62,7 @@ class DeltaApiClient(object):
         :param str requestor_id: the authenticating identity id
         :param str identity_id: the identity id to retrieve
         :return: the retrieved identity
-        :rtype: dict[str, object]
+        :rtype: dict[str, any]
         """
 
     @abstractmethod
@@ -90,7 +90,7 @@ class DeltaApiClient(object):
         :param str requestor_id: the authenticating identity id
         :param str secret_id: the secret id to be retrieved
         :return: the retrieved secret
-        :rtype: dict[str, object]
+        :rtype: dict[str, any]
         """
 
     @abstractmethod
