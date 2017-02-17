@@ -57,7 +57,7 @@ def test_register_identity(mocker, api_client, keystore, private_key,
     assert key2bytes(crypto_key) == key2bytes(private_key)
     assert key2bytes(signing_key) == key2bytes(private_key)
 
-    request_body = json.loads(responses.calls[0].request.body)
+    request_body = json.loads(responses.calls[0].request.body.decode("utf-8"))
     expected_request_body = dict(
         externalId="1",
         metadata=dict(),
