@@ -23,11 +23,7 @@ from requests.auth import AuthBase
 
 
 class RequestsApiClient(DeltaApiClient, LogMixin):
-
-    def register_identity(self,
-                          external_id=None,     # type: str
-                          metadata=None         # type: dict[str, str]
-                          ):
+    def register_identity(self, external_id=None, metadata=None):
         private_signing_key = crypto.generate_private_key()
         private_encryption_key = crypto.generate_private_key()
 
@@ -44,7 +40,7 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
             url=self.DELTA_URL + self.RESOURCE_IDENTITIES,
             json=dict((k, v) for k, v in body.items() if v is not None))
         response.raise_for_status()
-        identity_id = response.json()['identityId']     # type: str
+        identity_id = response.json()['identityId']
 
         self.keystore.store_keys(
             identity_id=identity_id,
@@ -52,10 +48,7 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
             private_encryption_key=private_encryption_key)
         return identity_id
 
-    def get_identity(self,
-                     requestor_id,  # type: str
-                     identity_id    # type: str
-                     ):
+    def get_identity(self, requestor_id, identity_id):
         response = requests.get(
             url="{base_url}{resource}/{identity_id}".format(
                 base_url=self.DELTA_URL,
@@ -63,14 +56,10 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
                 identity_id=identity_id),
             auth=self.signer(requestor_id))
         response.raise_for_status()
-        identity = response.json()  # type: dict[str, any]
+        identity = response.json()
         return identity
 
-    def create_secret(self,
-                      requestor_id,         # type: str
-                      content,              # type: bytes
-                      encryption_details    # type: dict[str, bytes]
-                      ):
+    def create_secret(self, requestor_id, content, encryption_details):
         content_b64 = b64encode(content).decode('utf-8')
         encryption_details_b64 = dict(
             (k, b64encode(v).decode('utf-8'))
@@ -87,11 +76,10 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
             auth=self.signer(requestor_id))
 
         response.raise_for_status()
-        created_secret = response.json()  # type: dict[str, str]
+        created_secret = response.json()
         return created_secret
 
     def get_secret_content(self, requestor_id, secret_id):
-        # type: (str, str) -> bytes
         response = requests.get(
             url="{base_url}{resource}/{secret_id}/content".format(
                 base_url=self.DELTA_URL,
@@ -102,10 +90,7 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
         response.raise_for_status()
         return b64decode(response.json())
 
-    def get_secret_metadata(self,
-                            requestor_id,   # type: str
-                            secret_id       # type: str
-                            ):
+    def get_secret_metadata(self, requestor_id, secret_id):
         response = requests.get(
             url="{base_url}{resource}/{secret_id}/metadata".format(
                 base_url=self.DELTA_URL,
@@ -114,14 +99,11 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
             auth=self.signer(requestor_id))
 
         response.raise_for_status()
-        metadata = response.json()                  # type: dict[str, str]
-        version = int(response.headers["ETag"])     # type: int
+        metadata = response.json()
+        version = int(response.headers["ETag"])
         return metadata, version
 
-    def get_secret(self,
-                   requestor_id,    # type: str
-                   secret_id        # type: str
-                   ):
+    def get_secret(self, requestor_id, secret_id):
         response = requests.get(
             url="{base_url}{resource}/{secret_id}".format(
                 base_url=self.DELTA_URL,
@@ -129,17 +111,13 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
                 secret_id=secret_id),
             auth=self.signer(requestor_id))
         response.raise_for_status()
-        secret = response.json()    # type: dict[str, any]
+        secret = response.json()
         for k, v in secret["encryptionDetails"].items():
             secret["encryptionDetails"][k] = b64decode(v)
         return secret
 
     def update_secret_metadata(self,
-                               requestor_id,    # type: str
-                               secret_id,       # type: str
-                               metadata,        # type: dict[str, str]
-                               version          # type: int
-                               ):
+                               requestor_id, secret_id, metadata, version):
         response = requests.put(
             url="{base_url}{resource}/{secret_id}/metadata".format(
                 base_url=self.DELTA_URL,

@@ -27,14 +27,13 @@ class DeltaApiClient(object):
     RESOURCE_SECRETS = '/secrets'                   # type: str
 
     def __init__(self, keystore):
-        # type: (DeltaKeyStore) -> DeltaApiClient
         """
         Constructs a new Delta API client with the given configuration.
 
-        :param keystore: the KeyStore object
-        :type keystore: :class:`~.KeyStore`
+        :param keystore: the DeltaKeyStore object
+        :type keystore: :class:`~.DeltaKeyStore`
         """
-        self.__keystore = keystore
+        self.__keystore = keystore                  # type: DeltaKeyStore
 
     @property
     def keystore(self):

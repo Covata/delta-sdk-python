@@ -33,7 +33,7 @@ __all__ = ["generate_private_key", "serialize_public_key",
 
 def generate_private_key():
     """
-    Generates an RSA private key object. The public key object can be
+    Generates a :class:`~rsa.RSAPrivateKey` object. The public key object can be
     extracted by calling public_key() method on the generated key object.
 
     >>> private_key = generate_private_key() # generate a private key
@@ -69,7 +69,7 @@ def serialize_public_key(public_key):
 
 def deserialize_public_key(b64_encoded_public_key):
     """
-    loads an RSAPublicKey object from a serialized public key.
+    loads a :class:`~rsa.RSAPublicKey` object from a serialized public key.
 
     :param str b64_encoded_public_key: the key as base64 encoded string
     :return: the public key object
