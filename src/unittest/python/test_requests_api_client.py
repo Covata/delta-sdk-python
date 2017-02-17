@@ -38,7 +38,8 @@ def api_client(keystore):
 @responses.activate
 def test_register_identity(mocker, api_client, keystore, private_key,
                            key2bytes):
-    expected_id = str(uuid.uuid4())
+    public_key = private_key.public_key()
+    expected_id = "identity_id"
     responses.add(responses.POST,
                   DeltaApiClient.DELTA_URL + DeltaApiClient.RESOURCE_IDENTITIES,
                   status=201,
@@ -50,9 +51,21 @@ def test_register_identity(mocker, api_client, keystore, private_key,
     identity_id = api_client.register_identity("1", {})
     crypto_key = keystore.get_private_encryption_key(identity_id)
     signing_key = keystore.get_private_signing_key(identity_id)
+
+    assert len(responses.calls) == 1
     assert identity_id == expected_id
     assert key2bytes(crypto_key) == key2bytes(private_key)
     assert key2bytes(signing_key) == key2bytes(private_key)
+
+    request_body = json.loads(responses.calls[0].request.body)
+    expected_request_body = dict(
+        externalId="1",
+        metadata=dict(),
+        cryptoPublicKey=b64encode(key2bytes(public_key)).decode("utf-8"),
+        signingPublicKey=b64encode(key2bytes(public_key)).decode("utf-8"),
+    )
+
+    assert request_body == expected_request_body
 
 
 @responses.activate
@@ -76,6 +89,7 @@ def test_get_identity(api_client, mock_signer):
 
     mock_signer.assert_called_once_with("requestor_id")
 
+    assert len(responses.calls) == 1
     assert response == expected_json
 
 
@@ -173,6 +187,7 @@ def test_get_secret(api_client, mock_signer):
 
     mock_signer.assert_called_once_with(requestor_id)
 
+    assert len(responses.calls) == 1
     assert response == expected_json
 
 
@@ -200,6 +215,7 @@ def test_get_secret_metadata(api_client, mock_signer):
     metadata, version = api_client.get_secret_metadata(requestor_id, secret_id)
     mock_signer.assert_called_once_with(requestor_id)
 
+    assert len(responses.calls) == 1
     assert metadata == response_json
     assert version == expected_version
 
@@ -221,6 +237,7 @@ def test_get_secret_content(api_client, mock_signer):
     retrieved_content = api_client.get_secret_content(requestor_id, secret_id)
     mock_signer.assert_called_once_with(requestor_id)
 
+    assert len(responses.calls) == 1
     assert retrieved_content == expected_content
 
 

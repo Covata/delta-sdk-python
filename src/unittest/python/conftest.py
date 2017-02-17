@@ -52,6 +52,6 @@ def key2bytes():
                 encryption_algorithm=serialization.NoEncryption())
         elif isinstance(key, rsa.RSAPublicKey):
             return key.public_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PublicFormat.PKCS1)
+                encoding=serialization.Encoding.DER,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo)
     return convert
