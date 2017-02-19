@@ -127,7 +127,26 @@ class DeltaApiClient(object):
         A newly created base secret has a metadata version of 1.
 
         :param str requestor_id: the authenticating identity id
-        :param str secret_id: the secret id to be retrieved
+        :param str secret_id: the secret id to be updated
+        :param metadata: metadata dictionary
+        :type metadata: dict[str, str]
+        :param int version: metadata version, required for optimistic locking
+        """
+
+    @abstractmethod
+    def update_identity_metadata(self,
+                                 requestor_id,
+                                 identity_id,
+                                 metadata,
+                                 version):
+        """
+        Updates the metadata of the given identity given the version number.
+        The version of an identity's metadata can be obtained by calling
+        :func:`~.DeltaApiClient.get_identity`.
+        An identity has an initial metadata version of 1.
+
+        :param str requestor_id: the authenticating identity id
+        :param str identity_id: the identity id to be updated
         :param metadata: metadata dictionary
         :type metadata: dict[str, str]
         :param int version: metadata version, required for optimistic locking

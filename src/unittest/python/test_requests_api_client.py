@@ -129,7 +129,7 @@ def test_create_secret(api_client, mock_signer):
 
 
 @responses.activate
-def test_update_metadata(api_client, mock_signer):
+def test_update_secret_metadata(api_client, mock_signer):
     responses.add(responses.PUT,
                   "{base_path}{resource}/{secret_id}/metadata".format(
                       base_path=DeltaApiClient.DELTA_URL,
@@ -150,6 +150,30 @@ def test_update_metadata(api_client, mock_signer):
 
     request_json = json.loads(responses.calls[0].request.body.decode("utf-8"))
     assert request_json == metadata
+
+
+@responses.activate
+def test_update_identity_metadata(api_client, mock_signer):
+    responses.add(responses.PUT,
+                  "{base_path}{resource}/{identity_id}".format(
+                      base_path=DeltaApiClient.DELTA_URL,
+                      resource=DeltaApiClient.RESOURCE_IDENTITIES,
+                      identity_id="mock_id"),
+                  status=204)
+
+    metadata = dict(metadata_key="metadata value")
+    api_client.update_identity_metadata(requestor_id="requestor_id",
+                                        identity_id="mock_id",
+                                        metadata=metadata,
+                                        version=1)
+
+    mock_signer.assert_called_once_with("requestor_id")
+
+    assert len(responses.calls) == 1
+    assert responses.calls[0].request.headers["if-match"] == str(1)
+
+    request_json = json.loads(responses.calls[0].request.body.decode("utf-8"))
+    assert request_json["metadata"] == metadata
 
 
 @responses.activate
