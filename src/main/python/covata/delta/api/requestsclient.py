@@ -131,6 +131,20 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
 
         response.raise_for_status()
 
+    def update_identity_metadata(self, requestor_id, identity_id, metadata,
+                                 version):
+        response = requests.put(
+            url="{base_url}{resource}/{identity_id}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_IDENTITIES,
+                identity_id=identity_id),
+            headers={
+                "if-match": str(version)
+            },
+            json=dict(metadata=metadata),
+            auth=self.signer(requestor_id))
+        response.raise_for_status()
+
     def signer(self, identity_id):
         """
         Instantiates a new :class:`~covata.delta.api.RequestsCVTSigner` for
