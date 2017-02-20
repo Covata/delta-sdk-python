@@ -20,8 +20,7 @@ import pytest
 import requests
 import responses
 
-from covata.delta import DeltaApiClient
-from covata.delta.api import RequestsApiClient
+from covata.delta import ApiClient
 
 
 @pytest.fixture(scope="function")
@@ -32,7 +31,7 @@ def mock_signer(mocker, api_client):
 
 @pytest.fixture(scope="function")
 def api_client(keystore):
-    return RequestsApiClient(keystore)
+    return ApiClient(keystore)
 
 
 @responses.activate
@@ -41,7 +40,7 @@ def test_register_identity(mocker, api_client, keystore, private_key,
     public_key = private_key.public_key()
     expected_id = "identity_id"
     responses.add(responses.POST,
-                  DeltaApiClient.DELTA_URL + DeltaApiClient.RESOURCE_IDENTITIES,
+                  ApiClient.DELTA_URL + ApiClient.RESOURCE_IDENTITIES,
                   status=201,
                   json=dict(identityId=expected_id))
 
@@ -78,8 +77,8 @@ def test_get_identity(api_client, mock_signer):
 
     responses.add(responses.GET,
                   "{base_path}{resource}/{identity_id}".format(
-                      base_path=DeltaApiClient.DELTA_URL,
-                      resource=DeltaApiClient.RESOURCE_IDENTITIES,
+                      base_path=ApiClient.DELTA_URL,
+                      resource=ApiClient.RESOURCE_IDENTITIES,
                       identity_id=expected_id),
                   status=200,
                   json=expected_json)
@@ -100,8 +99,8 @@ def test_create_secret(api_client, mock_signer):
 
     responses.add(responses.POST,
                   "{base_path}{resource}".format(
-                      base_path=DeltaApiClient.DELTA_URL,
-                      resource=DeltaApiClient.RESOURCE_SECRETS),
+                      base_path=ApiClient.DELTA_URL,
+                      resource=ApiClient.RESOURCE_SECRETS),
                   status=201,
                   json=expected_json)
 
@@ -135,8 +134,8 @@ def test_share_secret(api_client, mock_signer):
 
     responses.add(responses.POST,
                   "{base_path}{resource}".format(
-                      base_path=DeltaApiClient.DELTA_URL,
-                      resource=DeltaApiClient.RESOURCE_SECRETS),
+                      base_path=ApiClient.DELTA_URL,
+                      resource=ApiClient.RESOURCE_SECRETS),
                   status=201,
                   json=expected_json)
 
@@ -173,8 +172,8 @@ def test_share_secret(api_client, mock_signer):
 def test_update_secret_metadata(api_client, mock_signer):
     responses.add(responses.PUT,
                   "{base_path}{resource}/{secret_id}/metadata".format(
-                      base_path=DeltaApiClient.DELTA_URL,
-                      resource=DeltaApiClient.RESOURCE_SECRETS,
+                      base_path=ApiClient.DELTA_URL,
+                      resource=ApiClient.RESOURCE_SECRETS,
                       secret_id="mock_id"),
                   status=204)
 
@@ -197,8 +196,8 @@ def test_update_secret_metadata(api_client, mock_signer):
 def test_update_identity_metadata(api_client, mock_signer):
     responses.add(responses.PUT,
                   "{base_path}{resource}/{identity_id}".format(
-                      base_path=DeltaApiClient.DELTA_URL,
-                      resource=DeltaApiClient.RESOURCE_IDENTITIES,
+                      base_path=ApiClient.DELTA_URL,
+                      resource=ApiClient.RESOURCE_IDENTITIES,
                       identity_id="mock_id"),
                   status=204)
 
@@ -242,8 +241,8 @@ def test_get_secret(api_client, mock_signer):
 
     responses.add(responses.GET,
                   "{base_path}{resource}/{secret_id}".format(
-                      base_path=DeltaApiClient.DELTA_URL,
-                      resource=DeltaApiClient.RESOURCE_SECRETS,
+                      base_path=ApiClient.DELTA_URL,
+                      resource=ApiClient.RESOURCE_SECRETS,
                       secret_id=secret_id),
                   status=200,
                   json=response_json)
@@ -263,8 +262,8 @@ def test_delete_secret(api_client, mock_signer):
 
     responses.add(responses.DELETE,
                   "{base_path}{resource}/{secret_id}".format(
-                      base_path=DeltaApiClient.DELTA_URL,
-                      resource=DeltaApiClient.RESOURCE_SECRETS,
+                      base_path=ApiClient.DELTA_URL,
+                      resource=ApiClient.RESOURCE_SECRETS,
                       secret_id=secret_id),
                   status=204)
 
@@ -290,8 +289,8 @@ def test_get_secret_metadata(api_client, mock_signer):
     responses.add_callback(
         responses.GET,
         "{base_path}{resource}/{secret_id}/metadata".format(
-            base_path=DeltaApiClient.DELTA_URL,
-            resource=DeltaApiClient.RESOURCE_SECRETS,
+            base_path=ApiClient.DELTA_URL,
+            resource=ApiClient.RESOURCE_SECRETS,
             secret_id=secret_id),
         callback=request_callback,
         content_type='application/json')
@@ -313,8 +312,8 @@ def test_get_secret_content(api_client, mock_signer):
     responses.add(
         responses.GET,
         "{base_path}{resource}/{secret_id}/content".format(
-            base_path=DeltaApiClient.DELTA_URL,
-            resource=DeltaApiClient.RESOURCE_SECRETS,
+            base_path=ApiClient.DELTA_URL,
+            resource=ApiClient.RESOURCE_SECRETS,
             secret_id=secret_id),
         json=b64encode(expected_content).decode("utf-8"))
 

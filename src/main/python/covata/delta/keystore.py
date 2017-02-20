@@ -14,14 +14,54 @@
 
 from __future__ import absolute_import
 
+from abc import ABCMeta, abstractmethod
+
+import six
+
 import os
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 
-from covata.delta import DeltaKeyStore
-from covata.delta import LogMixin
+from .utils import LogMixin
+
+
+@six.add_metaclass(ABCMeta)
+class DeltaKeyStore(object):
+
+    @abstractmethod
+    def store_keys(self,
+                   identity_id,
+                   private_signing_key,
+                   private_encryption_key):
+        """
+        Stores the signing and encryption key pairs under a given identity id.
+
+        :param str identity_id: the identity id of the key owner
+        :param private_signing_key: the private signing key object
+        :type private_signing_key: :class:`RSAPrivateKey`
+        :param private_encryption_key: the private cryptographic key object
+        :type private_encryption_key: :class:`RSAPrivateKey`
+        """
+
+    @abstractmethod
+    def get_private_signing_key(self, identity_id):
+        """
+        Loads a private signing key instance for the given identity id.
+
+        :param str identity_id: the identity id of the key owner
+        :return: the signing private key object
+        """
+
+    @abstractmethod
+    def get_private_encryption_key(self, identity_id):
+        """
+        Loads a private encryption key instance for the given identity id.
+
+        :param str identity_id: the identity id of the key owner
+        :return: the cryptographic private key object
+        """
 
 
 class FileSystemKeyStore(DeltaKeyStore, LogMixin):

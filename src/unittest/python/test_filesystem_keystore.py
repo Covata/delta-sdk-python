@@ -14,7 +14,7 @@
 
 import pytest
 
-from covata.delta.crypto import FileSystemKeyStore
+from covata.delta.keystore import FileSystemKeyStore
 
 
 @pytest.fixture(scope="function")

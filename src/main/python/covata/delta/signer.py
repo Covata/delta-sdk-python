@@ -25,10 +25,9 @@ import six.moves.urllib as urllib
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
-from ..crypto import calculate_sha256hex
-from ..utils import LogMixin
+from covata.delta.crypto import calculate_sha256hex
 
-__all__ = ["CVTSigner"]
+__all__ = ["get_updated_headers"]
 
 UNDESIRED_HEADERS = ["Connection", "Content-Length"]
 SIGNING_ALGORITHM = "CVT1-RSA4096-SHA256"
@@ -68,59 +67,48 @@ class SignatureMaterial(namedtuple('SignatureMaterial', [
     def string_to_sign(self):
         return self.__string_to_sign
 
-
-class CVTSigner(LogMixin):
-    def __init__(self, keystore):
-        """
-        Creates a Request Signer object to sign a request
-        using the CVT1 request signing scheme.
-
-        :param keystore: The DeltaKeyStore object
-        :type keystore: :class:`~covata.delta.DeltaKeyStore`
-        """
-        self.__keystore = keystore
-
-    def get_signed_headers(self, identity_id, method, url, headers, payload):
-        """
-        Gets an updated header dictionary with an authorization header
-        signed using the CVT1 request signing scheme.
-
-        :param str identity_id: the authorizing identity id
-        :param str method: the HTTP request method
-        :param str url: the delta url
-        :param headers: the request headers
-        :type headers: dict[str, str]
-        :param bytes payload: the request payload
-        :return:
-            the original headers with additional Cvt-Date, Host, and
-            Authorization headers.
-        :rtype: dict[str, str]
-        """
-        signature_materials = _get_signature_materials(
-            method, url, headers, payload)
-
-        self.logger.debug(signature_materials.canonical_request)
-        self.logger.debug(signature_materials.string_to_sign)
-        signature = self.__sign(signature_materials.string_to_sign, identity_id)
-        headers_ = signature_materials.headers_
-        headers_["Authorization"] = \
-            "{algorithm} Identity={identity_id}, " \
-            "SignedHeaders={signed_headers}, Signature={signature}" \
-            .format(algorithm=SIGNING_ALGORITHM,
-                    identity_id=identity_id,
-                    signed_headers=signature_materials.signed_headers,
-                    signature=b64encode(signature).decode('utf-8'))
-        return headers_
-
-    def __sign(self, string_to_sign, identity_id):
-        private_key = self.__keystore.get_private_signing_key(identity_id)
-        return private_key.sign(string_to_sign.encode("utf-8"),
-                                padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
-                                            salt_length=32),
-                                hashes.SHA256())
+    def sign(self, private_key):
+        return private_key.sign(
+            self.string_to_sign.encode("utf-8"),
+            padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                        salt_length=32),
+            hashes.SHA256())
 
 
-def _get_signature_materials(method, url, headers, payload):
+def get_updated_headers(identity_id, method, url, headers, payload,
+                        private_signing_key):
+    """
+    Gets an updated header dictionary with an authorization header
+    signed using the CVT1 request signing scheme.
+
+    :param str identity_id: the authorizing identity id
+    :param str method: the HTTP request method
+    :param str url: the delta url
+    :param headers: the request headers
+    :type headers: dict[str, str]
+    :param bytes payload: the request payload
+    :param private_signing_key: the private signing key object
+    :return:
+        the original headers with additional Cvt-Date, Host, and
+        Authorization headers.
+    :rtype: dict[str, str]
+    """
+    signature_materials = __get_signature_materials(
+        method, url, headers, payload)
+
+    signature = signature_materials.sign(private_signing_key)
+    headers_ = signature_materials.headers_
+    headers_["Authorization"] = \
+        "{algorithm} Identity={identity_id}, " \
+        "SignedHeaders={signed_headers}, Signature={signature}" \
+        .format(algorithm=SIGNING_ALGORITHM,
+                identity_id=identity_id,
+                signed_headers=signature_materials.signed_headers,
+                signature=b64encode(signature).decode('utf-8'))
+    return headers_
+
+
+def __get_signature_materials(method, url, headers, payload):
     # type: (str, str, dict, bytes) -> SignatureMaterial
     url_parsed = urllib.parse.urlparse(url)
     cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)

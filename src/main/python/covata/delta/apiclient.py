@@ -13,14 +13,16 @@
 #   limitations under the License.
 
 from __future__ import absolute_import
+from base64 import b64encode, b64decode
 
-from abc import ABCMeta, abstractmethod
+import requests
 
-import six
+from covata.delta import utils
+from covata.delta import crypto
+from covata.delta import signer
 
 
-@six.add_metaclass(ABCMeta)
-class DeltaApiClient(object):
+class ApiClient(utils.LogMixin):
 
     DELTA_URL = 'https://delta.covata.io/v1'        # type: str
     RESOURCE_IDENTITIES = '/identities'             # type: str
@@ -31,7 +33,7 @@ class DeltaApiClient(object):
         Constructs a new Delta API client with the given configuration.
 
         :param keystore: the DeltaKeyStore object
-        :type keystore: :class:`~.DeltaKeyStore`
+        :type keystore: :class:`~covata.delta.DeltaKeyStore`
         """
         self.__keystore = keystore                  # type: DeltaKeyStore
 
@@ -39,7 +41,6 @@ class DeltaApiClient(object):
     def keystore(self):
         return self.__keystore
 
-    @abstractmethod
     def register_identity(self, external_id=None, metadata=None):
         """
         Creates a new identity in Delta with the provided metadata
@@ -52,8 +53,30 @@ class DeltaApiClient(object):
         :type metadata: dict[str, str] | None
         :rtype: str
         """
+        private_signing_key = crypto.generate_private_key()
+        private_encryption_key = crypto.generate_private_key()
 
-    @abstractmethod
+        public_signing_key = private_signing_key.public_key()
+        public_encryption_key = private_encryption_key.public_key()
+
+        body = dict(
+            signingPublicKey=crypto.serialize_public_key(public_signing_key),
+            cryptoPublicKey=crypto.serialize_public_key(public_encryption_key),
+            externalId=external_id,
+            metadata=metadata)
+
+        response = requests.post(
+            url=self.DELTA_URL + self.RESOURCE_IDENTITIES,
+            json=dict((k, v) for k, v in body.items() if v is not None))
+        response.raise_for_status()
+        identity_id = response.json()['identityId']
+
+        self.keystore.store_keys(
+            identity_id=identity_id,
+            private_signing_key=private_signing_key,
+            private_encryption_key=private_encryption_key)
+        return identity_id
+
     def get_identity(self, requestor_id, identity_id):
         """
         Gets the identity matching the given identity id.
@@ -63,8 +86,16 @@ class DeltaApiClient(object):
         :return: the retrieved identity
         :rtype: dict[str, any]
         """
+        response = requests.get(
+            url="{base_url}{resource}/{identity_id}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_IDENTITIES,
+                identity_id=identity_id),
+            auth=self.signer(requestor_id))
+        response.raise_for_status()
+        identity = response.json()
+        return identity
 
-    @abstractmethod
     def create_secret(self, requestor_id, content, encryption_details):
         """
         Creates a new secret in Delta. The key used for encryption should
@@ -77,8 +108,24 @@ class DeltaApiClient(object):
         :return: the created base secret
         :rtype: dict[str, str]
         """
+        content_b64 = b64encode(content).decode('utf-8')
+        encryption_details_b64 = dict(
+            (k, b64encode(v).decode('utf-8'))
+            for k, v in encryption_details.items())
 
-    @abstractmethod
+        response = requests.post(
+            url="{base_url}{resource}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS),
+            json=dict(
+                content=content_b64,
+                encryptionDetails=encryption_details_b64
+            ),
+            auth=self.signer(requestor_id))
+
+        response.raise_for_status()
+        return response.json()
+
     def share_secret(self, requestor_id, content, encryption_details,
                      base_secret_id, rsa_key_owner_id):
         """
@@ -97,8 +144,26 @@ class DeltaApiClient(object):
         :return: the created derived secret
         :rtype: dict[str, str]
         """
+        content_b64 = b64encode(content).decode('utf-8')
+        encryption_details_b64 = dict(
+            (k, b64encode(v).decode('utf-8'))
+            for k, v in encryption_details.items())
 
-    @abstractmethod
+        response = requests.post(
+            url="{base_url}{resource}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS),
+            json=dict(
+                content=content_b64,
+                encryptionDetails=encryption_details_b64,
+                baseSecret=base_secret_id,
+                rsaKeyOwner=rsa_key_owner_id
+            ),
+            auth=self.signer(requestor_id))
+
+        response.raise_for_status()
+        return response.json()
+
     def delete_secret(self, requestor_id, secret_id):
         """
         Deletes the secret with the given secret id.
@@ -106,8 +171,14 @@ class DeltaApiClient(object):
         :param str requestor_id: the authenticating identity id
         :param str secret_id: the secret id to be deleted
         """
+        response = requests.delete(
+            url="{base_url}{resource}/{secret_id}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS,
+                secret_id=secret_id),
+            auth=self.signer(requestor_id))
+        response.raise_for_status()
 
-    @abstractmethod
     def get_secret(self, requestor_id, secret_id):
         """
         Gets the given secret. This does not include the metadata and contents,
@@ -120,8 +191,18 @@ class DeltaApiClient(object):
         :return: the retrieved secret
         :rtype: dict[str, any]
         """
+        response = requests.get(
+            url="{base_url}{resource}/{secret_id}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS,
+                secret_id=secret_id),
+            auth=self.signer(requestor_id))
+        response.raise_for_status()
+        secret = response.json()
+        for k, v in secret["encryptionDetails"].items():
+            secret["encryptionDetails"][k] = b64decode(v)
+        return secret
 
-    @abstractmethod
     def get_secret_metadata(self, requestor_id, secret_id):
         """
         Gets the metadata key and value pairs for the given secret.
@@ -131,8 +212,18 @@ class DeltaApiClient(object):
         :return: the retrieved secret metadata dictionary and version tuple
         :rtype: (dict[str, str], int)
         """
+        response = requests.get(
+            url="{base_url}{resource}/{secret_id}/metadata".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS,
+                secret_id=secret_id),
+            auth=self.signer(requestor_id))
 
-    @abstractmethod
+        response.raise_for_status()
+        metadata = response.json()
+        version = int(response.headers["ETag"])
+        return metadata, version
+
     def get_secret_content(self, requestor_id, secret_id):
         """
         Gets the contents of the given secret.
@@ -142,8 +233,16 @@ class DeltaApiClient(object):
         :return: the retrieved secret
         :rtype: bytes
         """
+        response = requests.get(
+            url="{base_url}{resource}/{secret_id}/content".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS,
+                secret_id=secret_id),
+            auth=self.signer(requestor_id))
 
-    @abstractmethod
+        response.raise_for_status()
+        return b64decode(response.json())
+
     def update_secret_metadata(self,
                                requestor_id,
                                secret_id,
@@ -161,8 +260,19 @@ class DeltaApiClient(object):
         :type metadata: dict[str, str]
         :param int version: metadata version, required for optimistic locking
         """
+        response = requests.put(
+            url="{base_url}{resource}/{secret_id}/metadata".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS,
+                secret_id=secret_id),
+            headers={
+                "if-match": str(version)
+            },
+            json=metadata,
+            auth=self.signer(requestor_id))
 
-    @abstractmethod
+        response.raise_for_status()
+
     def update_identity_metadata(self,
                                  requestor_id,
                                  identity_id,
@@ -180,40 +290,37 @@ class DeltaApiClient(object):
         :type metadata: dict[str, str]
         :param int version: metadata version, required for optimistic locking
         """
+        response = requests.put(
+            url="{base_url}{resource}/{identity_id}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_IDENTITIES,
+                identity_id=identity_id),
+            headers={
+                "if-match": str(version)
+            },
+            json=dict(metadata=metadata),
+            auth=self.signer(requestor_id))
+        response.raise_for_status()
 
-
-@six.add_metaclass(ABCMeta)
-class DeltaKeyStore(object):
-
-    @abstractmethod
-    def store_keys(self,
-                   identity_id,
-                   private_signing_key,
-                   private_encryption_key):
+    def signer(self, identity_id):
         """
-        Stores the signing and encryption key pairs under a given identity id.
+        Instantiates a new :class:`~covata.delta.api.RequestsCVTSigner` for
+        the authorizing identity using this :class:`~.RequestsApiClient`.
 
-        :param str identity_id: the identity id of the key owner
-        :param private_signing_key: the private signing key object
-        :type private_signing_key: :class:`RSAPrivateKey`
-        :param private_encryption_key: the private cryptographic key object
-        :type private_encryption_key: :class:`RSAPrivateKey`
-        """
+        >>> signer = api_client.signer(authorizing_identity)
 
-    @abstractmethod
-    def get_private_signing_key(self, identity_id):
+        :param str identity_id: the authorizing identity id
+        :return: the :class:`~.RequestsCVTSigner` object
+        :rtype: :class:`~.RequestsCVTSigner`
         """
-        Loads a private signing key instance for the given identity id.
-
-        :param str identity_id: the identity id of the key owner
-        :return: the signing private key object
-        """
-
-    @abstractmethod
-    def get_private_encryption_key(self, identity_id):
-        """
-        Loads a private encryption key instance for the given identity id.
-
-        :param str identity_id: the identity id of the key owner
-        :return: the cryptographic private key object
-        """
+        def sign_request(r):
+            signing_key = self.keystore.get_private_signing_key(identity_id)
+            r.headers = signer.get_updated_headers(
+                identity_id=identity_id,
+                method=r.method,
+                url=r.url,
+                headers=r.headers,
+                payload=r.body,
+                private_signing_key=signing_key)
+            return r
+        return sign_request
