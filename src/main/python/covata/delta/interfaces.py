@@ -74,7 +74,27 @@ class DeltaApiClient(object):
         :param bytes content: the contents of the secret
         :param encryption_details: the encryption details
         :type encryption_details: dict[str, bytes]
-        :return: the created secret
+        :return: the created base secret
+        :rtype: dict[str, str]
+        """
+
+    @abstractmethod
+    def share_secret(self, requestor_id, content, encryption_details,
+                     base_secret_id, rsa_key_owner_id):
+        """
+        Shares the base secret with the specified target RSA key owner. The
+        contents must be encrypted with the public encryption key of the
+        RSA key owner, and the encrypted key and initialisation vector must
+        be provided. This call will result in a new derived secret being created
+        and returned as a response.
+
+        :param str requestor_id: the authenticating identity id
+        :param bytes content: the contents of the secret
+        :param encryption_details: the encryption details
+        :type encryption_details: dict[str, bytes]
+        :param str base_secret_id: the id of the base secret
+        :param str rsa_key_owner_id: the id of the rsa key owner
+        :return: the created derived secret
         :rtype: dict[str, str]
         """
 

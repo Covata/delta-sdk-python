@@ -76,8 +76,29 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
             auth=self.signer(requestor_id))
 
         response.raise_for_status()
-        created_secret = response.json()
-        return created_secret
+        return response.json()
+
+    def share_secret(self, requestor_id, content, encryption_details,
+                     base_secret_id, rsa_key_owner_id):
+        content_b64 = b64encode(content).decode('utf-8')
+        encryption_details_b64 = dict(
+            (k, b64encode(v).decode('utf-8'))
+            for k, v in encryption_details.items())
+
+        response = requests.post(
+            url="{base_url}{resource}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS),
+            json=dict(
+                content=content_b64,
+                encryptionDetails=encryption_details_b64,
+                baseSecret=base_secret_id,
+                rsaKeyOwner=rsa_key_owner_id
+            ),
+            auth=self.signer(requestor_id))
+
+        response.raise_for_status()
+        return response.json()
 
     def get_secret_content(self, requestor_id, secret_id):
         response = requests.get(
