@@ -129,6 +129,47 @@ def test_create_secret(api_client, mock_signer):
 
 
 @responses.activate
+def test_share_secret(api_client, mock_signer):
+    expected_json = dict(id="mock_secret_id",
+                         href="https://test.com/v1/mock_secret_id")
+
+    responses.add(responses.POST,
+                  "{base_path}{resource}".format(
+                      base_path=DeltaApiClient.DELTA_URL,
+                      resource=DeltaApiClient.RESOURCE_SECRETS),
+                  status=201,
+                  json=expected_json)
+
+    content = b"123"
+    key = b"1234"
+    iv = b"1312"
+    rsa_key_owner_id = "rsa_key_owner_id"
+    base_secret_id = "base"
+    response = api_client.share_secret(
+        requestor_id="requestor_id",
+        content=content,
+        encryption_details=dict(
+            symmetricKey=key,
+            initialisationVector=iv),
+        rsa_key_owner_id=rsa_key_owner_id,
+        base_secret_id=base_secret_id)
+
+    mock_signer.assert_called_once_with("requestor_id")
+
+    assert len(responses.calls) == 1
+    assert response == expected_json
+
+    request_json = json.loads(responses.calls[0].request.body.decode("utf-8"))
+    encryption_details = request_json["encryptionDetails"]
+
+    assert request_json["rsaKeyOwner"] == rsa_key_owner_id
+    assert request_json["baseSecret"] == base_secret_id
+    assert b64decode(request_json["content"]) == content
+    assert b64decode(encryption_details["symmetricKey"]) == key
+    assert b64decode(encryption_details["initialisationVector"]) == iv
+
+
+@responses.activate
 def test_update_secret_metadata(api_client, mock_signer):
     responses.add(responses.PUT,
                   "{base_path}{resource}/{secret_id}/metadata".format(
