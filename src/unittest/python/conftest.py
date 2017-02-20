@@ -31,7 +31,7 @@ def temp_directory():
 
 
 @pytest.fixture(scope="function")
-def keystore(temp_directory):
+def key_store(temp_directory):
     return FileSystemKeyStore(temp_directory, b"passphrase")
 
 

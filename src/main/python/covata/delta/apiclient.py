@@ -28,18 +28,18 @@ class ApiClient(utils.LogMixin):
     RESOURCE_IDENTITIES = '/identities'             # type: str
     RESOURCE_SECRETS = '/secrets'                   # type: str
 
-    def __init__(self, keystore):
+    def __init__(self, key_store):
         """
         Constructs a new Delta API client with the given configuration.
 
-        :param keystore: the DeltaKeyStore object
-        :type keystore: :class:`~covata.delta.DeltaKeyStore`
+        :param key_store: the DeltaKeyStore object
+        :type key_store: :class:`DeltaKeyStore`
         """
-        self.__keystore = keystore                  # type: DeltaKeyStore
+        self.__key_store = key_store
 
     @property
-    def keystore(self):
-        return self.__keystore
+    def key_store(self):
+        return self.__key_store
 
     def register_identity(self, external_id=None, metadata=None):
         """
@@ -71,7 +71,7 @@ class ApiClient(utils.LogMixin):
         response.raise_for_status()
         identity_id = response.json()['identityId']
 
-        self.keystore.store_keys(
+        self.key_store.store_keys(
             identity_id=identity_id,
             private_signing_key=private_signing_key,
             private_encryption_key=private_encryption_key)
@@ -183,8 +183,8 @@ class ApiClient(utils.LogMixin):
         """
         Gets the given secret. This does not include the metadata and contents,
         they need to be made as separate requests,
-        :func:`~.DeltaApiClient.get_secret_metadata`
-        and :func:`~.DeltaApiClient.get_secret_content` respectively.
+        :func:`~.ApiClient.get_secret_metadata`
+        and :func:`~.ApiClient.get_secret_content` respectively.
 
         :param str requestor_id: the authenticating identity id
         :param str secret_id: the secret id to be retrieved
@@ -251,7 +251,7 @@ class ApiClient(utils.LogMixin):
         """
         Updates the metadata of the given secret given the version number.
         The version of a secret's metadata can be obtained by calling
-        :func:`~.DeltaApiClient.get_secret_content`.
+        :func:`~.ApiClient.get_secret`.
         A newly created base secret has a metadata version of 1.
 
         :param str requestor_id: the authenticating identity id
@@ -281,7 +281,7 @@ class ApiClient(utils.LogMixin):
         """
         Updates the metadata of the given identity given the version number.
         The version of an identity's metadata can be obtained by calling
-        :func:`~.DeltaApiClient.get_identity`.
+        :func:`~.ApiClient.get_identity`.
         An identity has an initial metadata version of 1.
 
         :param str requestor_id: the authenticating identity id
@@ -304,17 +304,18 @@ class ApiClient(utils.LogMixin):
 
     def signer(self, identity_id):
         """
-        Instantiates a new :class:`~covata.delta.api.RequestsCVTSigner` for
-        the authorizing identity using this :class:`~.RequestsApiClient`.
+        Generates a request signer function for the
+        the authorizing identity.
 
         >>> signer = api_client.signer(authorizing_identity)
 
         :param str identity_id: the authorizing identity id
-        :return: the :class:`~.RequestsCVTSigner` object
-        :rtype: :class:`~.RequestsCVTSigner`
+        :return: the request signer function
+        :rtype: (:class:`PreparedRequest`) -> :class:`PreparedRequest`
         """
         def sign_request(r):
-            signing_key = self.keystore.get_private_signing_key(identity_id)
+            # type: (requests.PreparedRequest) -> requests.PreparedRequest
+            signing_key = self.key_store.get_private_signing_key(identity_id)
             r.headers = signer.get_updated_headers(
                 identity_id=identity_id,
                 method=r.method,

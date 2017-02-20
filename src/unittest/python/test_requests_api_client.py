@@ -30,12 +30,12 @@ def mock_signer(mocker, api_client):
 
 
 @pytest.fixture(scope="function")
-def api_client(keystore):
-    return ApiClient(keystore)
+def api_client(key_store):
+    return ApiClient(key_store)
 
 
 @responses.activate
-def test_register_identity(mocker, api_client, keystore, private_key,
+def test_register_identity(mocker, api_client, key_store, private_key,
                            key2bytes):
     public_key = private_key.public_key()
     expected_id = "identity_id"
@@ -48,8 +48,8 @@ def test_register_identity(mocker, api_client, keystore, private_key,
                  return_value=private_key)
 
     identity_id = api_client.register_identity("1", {})
-    crypto_key = keystore.get_private_encryption_key(identity_id)
-    signing_key = keystore.get_private_signing_key(identity_id)
+    crypto_key = key_store.get_private_encryption_key(identity_id)
+    signing_key = key_store.get_private_signing_key(identity_id)
 
     assert len(responses.calls) == 1
     assert identity_id == expected_id
@@ -324,9 +324,9 @@ def test_get_secret_content(api_client, mock_signer):
     assert retrieved_content == expected_content
 
 
-def test_construct_signer(mocker, api_client, keystore, private_key):
+def test_construct_signer(mocker, api_client, key_store, private_key):
     get_private_signing_key = mocker.patch.object(
-        keystore, 'get_private_signing_key', return_value=private_key)
+        key_store, 'get_private_signing_key', return_value=private_key)
     signer = api_client.signer("mock_id")
 
     r = requests.Request(url='https://test.com/stage/resource',

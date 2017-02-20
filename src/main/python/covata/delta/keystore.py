@@ -70,8 +70,8 @@ class FileSystemKeyStore(DeltaKeyStore, LogMixin):
                  key_store_passphrase):
         # type: (str, bytes) -> self
         """
-        Constructs a new Filesystem-backed Keystore with the given
-        configuration.
+        Constructs a new Filesystem-backed :class:`~.DeltaKeyStore` with
+        the given configuration.
 
         :param str key_store_path: the path to the private key store
         :param bytes key_store_passphrase: the passphrase to decrypt the keys
@@ -83,7 +83,7 @@ class FileSystemKeyStore(DeltaKeyStore, LogMixin):
                    identity_id,
                    private_signing_key,
                    private_encryption_key):
-        # type: (RSAPrivateKey, RSAPrivateKey, str) -> None
+        # type: (str, RSAPrivateKey, RSAPrivateKey) -> None
         self.__save(private_signing_key, "{}.signing.pem".format(identity_id))
         self.__save(private_encryption_key, "{}.crypto.pem".format(identity_id))
 
@@ -110,7 +110,7 @@ class FileSystemKeyStore(DeltaKeyStore, LogMixin):
             os.makedirs(self.key_store_path)
 
         if os.path.isfile(file_path):
-            msg = "Save failed: A key with name [{}] exists in keystore".format(
+            msg = "Save failed: A key with name [{}] already exists".format(
                 file_name)
             self.logger.error(msg)
             raise IOError(msg)
