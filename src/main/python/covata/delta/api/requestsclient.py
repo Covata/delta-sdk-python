@@ -137,6 +137,15 @@ class RequestsApiClient(DeltaApiClient, LogMixin):
             secret["encryptionDetails"][k] = b64decode(v)
         return secret
 
+    def delete_secret(self, requestor_id, secret_id):
+        response = requests.delete(
+            url="{base_url}{resource}/{secret_id}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS,
+                secret_id=secret_id),
+            auth=self.signer(requestor_id))
+        response.raise_for_status()
+
     def update_secret_metadata(self,
                                requestor_id, secret_id, metadata, version):
         response = requests.put(

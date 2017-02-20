@@ -99,6 +99,15 @@ class DeltaApiClient(object):
         """
 
     @abstractmethod
+    def delete_secret(self, requestor_id, secret_id):
+        """
+        Deletes the secret with the given secret id.
+
+        :param str requestor_id: the authenticating identity id
+        :param str secret_id: the secret id to be deleted
+        """
+
+    @abstractmethod
     def get_secret(self, requestor_id, secret_id):
         """
         Gets the given secret. This does not include the metadata and contents,
