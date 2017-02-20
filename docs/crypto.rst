@@ -27,7 +27,7 @@ DeltaKeyStore
 The ``DeltaKeyStore`` provides the interface for a key-storage
 backend of choice.
 
-.. currentmodule:: covata.delta
+.. currentmodule:: covata.delta.keystore
 
 .. autoclass:: DeltaKeyStore
     :members:
@@ -39,7 +39,7 @@ Implementation of the ``DeltaKeyStore`` abstract base class using the file
 system. Private keys are saved in the file system as encrypted PEM formats
 and are only decrypted in memory on read.
 
-.. currentmodule:: covata.delta.crypto
+.. currentmodule:: covata.delta.keystore
 
 .. autoclass:: FileSystemKeyStore
     :show-inheritance:
