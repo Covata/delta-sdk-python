@@ -257,6 +257,25 @@ def test_get_secret(api_client, mock_signer):
 
 
 @responses.activate
+def test_delete_secret(api_client, mock_signer):
+    requestor_id = "requestor_id"
+    secret_id = "secret_id"
+
+    responses.add(responses.DELETE,
+                  "{base_path}{resource}/{secret_id}".format(
+                      base_path=DeltaApiClient.DELTA_URL,
+                      resource=DeltaApiClient.RESOURCE_SECRETS,
+                      secret_id=secret_id),
+                  status=204)
+
+    api_client.delete_secret(requestor_id, secret_id)
+
+    mock_signer.assert_called_once_with(requestor_id)
+
+    assert len(responses.calls) == 1
+
+
+@responses.activate
 def test_get_secret_metadata(api_client, mock_signer):
     response_json = dict(metadata_key="metadata value")
     requestor_id = "requestor_id"
