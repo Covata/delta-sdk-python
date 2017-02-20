@@ -20,7 +20,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-import covata.delta.crypto as crypto
+from covata.delta.keystore import FileSystemKeyStore
 
 
 @pytest.yield_fixture(scope="function")
@@ -31,8 +31,8 @@ def temp_directory():
 
 
 @pytest.fixture(scope="function")
-def keystore(temp_directory):
-    return crypto.FileSystemKeyStore(temp_directory, b"passphrase")
+def key_store(temp_directory):
+    return FileSystemKeyStore(temp_directory, b"passphrase")
 
 
 @pytest.fixture(scope="session")

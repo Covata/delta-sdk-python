@@ -22,12 +22,13 @@ Welcome to Covata Delta Python SDK's documentation!
 ===================================================
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 4
     :caption: Contents:
 
     get_started
     api
     crypto
+    keystore
 
 Indices and tables
 ==================

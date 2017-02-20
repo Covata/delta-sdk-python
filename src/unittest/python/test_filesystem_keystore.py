@@ -14,39 +14,39 @@
 
 import pytest
 
-from covata.delta.crypto import FileSystemKeyStore
+from covata.delta.keystore import FileSystemKeyStore
 
 
 @pytest.fixture(scope="function")
-def fs_keystore(temp_directory):
+def fs_key_store(temp_directory):
     return FileSystemKeyStore(temp_directory, b"passphrase")
 
 
-def test_decrypt_private_key(fs_keystore, private_key, key2bytes):
-    fs_keystore.store_keys("mock", private_key, private_key)
-    retrieved = key2bytes(fs_keystore.get_private_signing_key("mock"))
+def test_decrypt_private_key(fs_key_store, private_key, key2bytes):
+    fs_key_store.store_keys("mock", private_key, private_key)
+    retrieved = key2bytes(fs_key_store.get_private_signing_key("mock"))
     expected = key2bytes(private_key)
     assert retrieved == expected
 
 
-def test_encrypt_to_file(mocker, fs_keystore, private_key):
+def test_encrypt_to_file(mocker, fs_key_store, private_key):
     mock_makedirs = mocker.patch('os.makedirs')
     mocker.patch('os.path.isdir', return_value=False)
-    fs_keystore.store_keys("mock", private_key, private_key)
-    mock_makedirs.assert_called_with(fs_keystore.key_store_path)
+    fs_key_store.store_keys("mock", private_key, private_key)
+    mock_makedirs.assert_called_with(fs_key_store.key_store_path)
 
 
-def test_save__should__fail_when_key_exists(fs_keystore, private_key):
-    fs_keystore.store_keys("mock", private_key, private_key)
+def test_save__should__fail_when_key_exists(fs_key_store, private_key):
+    fs_key_store.store_keys("mock", private_key, private_key)
     with pytest.raises(IOError) as excinfo:
-        fs_keystore.store_keys("mock", private_key, private_key)
+        fs_key_store.store_keys("mock", private_key, private_key)
     expected = \
-        "Save failed: A key with name [mock.signing.pem] exists in keystore"
+        "Save failed: A key with name [mock.signing.pem] already exists"
     assert expected in str(excinfo.value)
 
 
-def test_save__should__fail_when_type_is_not_rsaprivatekey(fs_keystore):
+def test_save__should__fail_when_type_is_not_rsaprivatekey(fs_key_store):
     with pytest.raises(TypeError) as excinfo:
-        fs_keystore.store_keys("mock_id", "key", "crypto_key")
+        fs_key_store.store_keys("mock_id", "key", "crypto_key")
     expected = "private_key must be an instance of RSAPrivateKey, actual: str"
     assert expected in str(excinfo.value)

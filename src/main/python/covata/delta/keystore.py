@@ -14,14 +14,54 @@
 
 from __future__ import absolute_import
 
+from abc import ABCMeta, abstractmethod
+
+import six
+
 import os
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 
-from covata.delta import DeltaKeyStore
-from covata.delta import LogMixin
+from .utils import LogMixin
+
+
+@six.add_metaclass(ABCMeta)
+class DeltaKeyStore(object):
+
+    @abstractmethod
+    def store_keys(self,
+                   identity_id,
+                   private_signing_key,
+                   private_encryption_key):
+        """
+        Stores the signing and encryption key pairs under a given identity id.
+
+        :param str identity_id: the identity id of the key owner
+        :param private_signing_key: the private signing key object
+        :type private_signing_key: :class:`RSAPrivateKey`
+        :param private_encryption_key: the private cryptographic key object
+        :type private_encryption_key: :class:`RSAPrivateKey`
+        """
+
+    @abstractmethod
+    def get_private_signing_key(self, identity_id):
+        """
+        Loads a private signing key instance for the given identity id.
+
+        :param str identity_id: the identity id of the key owner
+        :return: the signing private key object
+        """
+
+    @abstractmethod
+    def get_private_encryption_key(self, identity_id):
+        """
+        Loads a private encryption key instance for the given identity id.
+
+        :param str identity_id: the identity id of the key owner
+        :return: the cryptographic private key object
+        """
 
 
 class FileSystemKeyStore(DeltaKeyStore, LogMixin):
@@ -30,8 +70,8 @@ class FileSystemKeyStore(DeltaKeyStore, LogMixin):
                  key_store_passphrase):
         # type: (str, bytes) -> self
         """
-        Constructs a new Filesystem-backed Keystore with the given
-        configuration.
+        Constructs a new Filesystem-backed :class:`~.DeltaKeyStore` with
+        the given configuration.
 
         :param str key_store_path: the path to the private key store
         :param bytes key_store_passphrase: the passphrase to decrypt the keys
@@ -43,7 +83,7 @@ class FileSystemKeyStore(DeltaKeyStore, LogMixin):
                    identity_id,
                    private_signing_key,
                    private_encryption_key):
-        # type: (RSAPrivateKey, RSAPrivateKey, str) -> None
+        # type: (str, RSAPrivateKey, RSAPrivateKey) -> None
         self.__save(private_signing_key, "{}.signing.pem".format(identity_id))
         self.__save(private_encryption_key, "{}.crypto.pem".format(identity_id))
 
@@ -70,7 +110,7 @@ class FileSystemKeyStore(DeltaKeyStore, LogMixin):
             os.makedirs(self.key_store_path)
 
         if os.path.isfile(file_path):
-            msg = "Save failed: A key with name [{}] exists in keystore".format(
+            msg = "Save failed: A key with name [{}] already exists".format(
                 file_name)
             self.logger.error(msg)
             raise IOError(msg)
