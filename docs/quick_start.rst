@@ -20,8 +20,11 @@ Requirements
 
 -  Python 2.7 + or 3.3 +
 -  pip 9.0.1 +
--  virtualenv: ``sudo pip install virtualenv``
--  pybuilder: ``pip install pybuilder``
+-  virtualenv
+-  pybuilder
+
+Setting up Virtualenv and PyBuilder
+-----------------------------------
 
 .. code:: bash
 
@@ -33,33 +36,37 @@ Requirements
 Building the project
 --------------------
 
-.. code:: bash
+-  Check out the project:
 
-    # 1. Check out the project
-    git clone https://github.com/Covata/delta-sdk-python.git
-    cd delta-sdk-python
+   .. code:: bash
 
-    # 2. Build the project
-    pyb
+      git clone https://github.com/Covata/delta-sdk-python.git
+      cd delta-sdk-python
+
+-  Build the project:
+
+   .. code:: bash
+
+      pyb
 
 Installing the binary distribution
 ----------------------------------
 
--  Using PyBuilder
+-  Using PyBuilder:
 
    .. code:: bash
 
-       pyb install
+      pyb install
 
--  Using Distutils
-
-   .. code:: bash
-
-       cd target/dist/delta-sdk-python-x.x.x-x
-       python setup.py install
-
--  Using pip directly from Github
+-  Using Distutils, where `x.y.z` are the version numbers:
 
    .. code:: bash
 
-       pip install git+git://github.com/Covata/delta-sdk-python.git@master
+      cd target/dist/delta-sdk-python-x.y.z
+      python setup.py install
+
+-  Using pip directly from Github (This will install the current master branch):
+
+   .. code:: bash
+
+      pip install git+git://github.com/Covata/delta-sdk-python.git@master

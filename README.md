@@ -9,8 +9,12 @@ Covata Delta provides an easy to use framework for sharing secrets across networ
 
 - Python 2.7 + or 3.3 +
 - pip 9.0.1 +
-- virtualenv: `sudo pip install virtualenv`
-- pybuilder: `pip install pybuilder`
+- virtualenv
+- pybuilder
+
+## Quick Start
+
+### Setting up Virtualenv and PyBuilder
 
 ```bash
 sudo pip install virtualenv
@@ -19,33 +23,33 @@ source venv/bin/activate
 pip install pybuilder 
 ```
 
-## Quick Start
-
 ### Building the project
 
+* Check out the project:
 ```bash
-# 1. Check out the project
 git clone https://github.com/Covata/delta-sdk-python.git
 cd delta-sdk-python
+```
 
-# 2. Build the project
+* Build the project:
+```
 pyb
 ```
 
 ### Installing the binary distribution
 
-* Using PyBuilder
+* Using PyBuilder:
 ```bash
 pyb install
 ```
 
-* Using Distutils
+* Using Distutils, where `x.y.z` are the version numbers:
 ```bash
-cd target/dist/delta-sdk-python-x.x.x-x
+cd target/dist/delta-sdk-python-x.y.z
 python setup.py install
 ```
 
-* Using pip directly from Github
+* Using pip directly from Github (This will install the current master branch):
 ```bash
 pip install git+git://github.com/Covata/delta-sdk-python.git@master
 ```
