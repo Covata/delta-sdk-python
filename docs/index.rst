@@ -31,7 +31,7 @@ across networks, and organisations.
     :caption: Contents:
 
     self
-    get_started
+    quick_start
     api
     crypto
     keystore
