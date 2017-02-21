@@ -17,8 +17,8 @@ from base64 import b64encode, b64decode
 
 import requests
 
-from covata.delta import signer
-from covata.delta import utils
+from . import signer
+from . import utils
 
 
 class ApiClient(utils.LogMixin):
