@@ -28,7 +28,8 @@ def client(api_client, key_store):
 
 @pytest.fixture(scope="function")
 def mock_signer(mocker, api_client):
-    return mocker.patch.object(api_client, "signer", return_value=mocker.Mock())
+    return mocker.patch.object(api_client, "signer",
+                               return_value=mocker.Mock())
 
 
 @pytest.fixture(scope="function")
@@ -36,14 +37,15 @@ def api_client(key_store):
     return ApiClient(key_store)
 
 
-def test_create_identity(mocker, client, key_store, private_key, key2bytes):
+def test_create_identity(mocker, client, api_client, key_store, private_key,
+                         key2bytes):
     expected_id = str(uuid.uuid4())
 
     mocker.patch('covata.delta.crypto.generate_private_key',
                  return_value=private_key)
 
-    mocker.patch('covata.delta.ApiClient.register_identity',
-                 return_value=expected_id)
+    mocker.patch.object(api_client, "register_identity",
+                        return_value=expected_id)
 
     identity = client.create_identity("1", {})
 
