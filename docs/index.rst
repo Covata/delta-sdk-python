@@ -33,6 +33,7 @@ across networks, and organisations.
     self
     quick_start
     client
+    identity
     api
     crypto
     keystore

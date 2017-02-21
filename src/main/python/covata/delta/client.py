@@ -101,6 +101,15 @@ class Client(utils.LogMixin):
 
 
 class Identity:
+    """
+    An instance of this class encapsulates an identity in Covata Delta. An
+    identity can be a user, application, device or any other identifiable
+    entity that can create secrets and/or be target recipient of a secret.
+
+    An has two sets of asymmetric keys, for encryption and for signing of
+    requests. Identities may also have optional, public, searchable metadata
+    and a reference to an identifier in an external system.
+    """
 
     def __init__(self, parent, identity_id, public_encryption_key,
                  external_id, metadata):
