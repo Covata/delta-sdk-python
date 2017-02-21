@@ -15,13 +15,28 @@
 Quick Start
 ===========
 
-The project can either be built from source or installed
-directly using pip
+Requirements
+------------
+
+-  Python 2.7 + or 3.3 +
+-  pip 9.0.1 +
+
+Setting up Virtualenv
+---------------------
+
+.. code:: bash
+
+   sudo pip install virtualenv
+   virtualenv venv
+   source venv/bin/activate
+
+The project can then be installed directly using pip
+or built from source.
 
 Installation
 ------------
 
--  Using pip directly from Github (This will install the current master branch):
+-  Using ``pip`` directly from Github (Note: This will install the current master branch):
 
    .. code:: bash
 
@@ -30,26 +45,14 @@ Installation
 Building from Source
 --------------------
 
-Requirements
-~~~~~~~~~~~~
-
--  Python 2.7 + or 3.3 +
--  pip 9.0.1 +
--  virtualenv
--  pybuilder
-
-Setting up Virtualenv and PyBuilder
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code:: bash
-
-    sudo pip install virtualenv
-    virtualenv venv
-    source venv/bin/activate
-    pip install pybuilder
-
 Building the project
 ~~~~~~~~~~~~~~~~~~~~
+
+-  Install PyBuilder:
+
+   .. code:: bash
+
+      pip install pybuilder
 
 -  Check out the project:
 
@@ -73,7 +76,7 @@ Installing the binary distribution
 
       pyb install
 
--  Using Distutils, where `x.y.z` are the version numbers:
+-  Using Distutils, where `x.y.z` is the version number:
 
    .. code:: bash
 
