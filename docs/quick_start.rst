@@ -15,8 +15,23 @@
 Quick Start
 ===========
 
-Requirements
+The project can either be built from source or installed
+directly using pip
+
+Installation
 ------------
+
+-  Using pip directly from Github (This will install the current master branch):
+
+   .. code:: bash
+
+      pip install git+git://github.com/Covata/delta-sdk-python.git@master
+
+Building from Source
+--------------------
+
+Requirements
+~~~~~~~~~~~~
 
 -  Python 2.7 + or 3.3 +
 -  pip 9.0.1 +
@@ -24,7 +39,7 @@ Requirements
 -  pybuilder
 
 Setting up Virtualenv and PyBuilder
------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
 
@@ -34,7 +49,7 @@ Setting up Virtualenv and PyBuilder
     pip install pybuilder
 
 Building the project
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
 -  Check out the project:
 
@@ -50,7 +65,7 @@ Building the project
       pyb
 
 Installing the binary distribution
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Using PyBuilder:
 
@@ -64,9 +79,3 @@ Installing the binary distribution
 
       cd target/dist/delta-sdk-python-x.y.z
       python setup.py install
-
--  Using pip directly from Github (This will install the current master branch):
-
-   .. code:: bash
-
-      pip install git+git://github.com/Covata/delta-sdk-python.git@master
