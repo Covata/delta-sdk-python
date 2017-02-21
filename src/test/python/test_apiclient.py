@@ -21,6 +21,7 @@ import requests
 import responses
 
 from covata.delta import ApiClient
+from covata.delta import crypto
 
 
 @pytest.fixture(scope="function")
@@ -35,8 +36,7 @@ def api_client(key_store):
 
 
 @responses.activate
-def test_register_identity(mocker, api_client, key_store, private_key,
-                           key2bytes):
+def test_register_identity(mocker, api_client, private_key):
     public_key = private_key.public_key()
     expected_id = "identity_id"
     responses.add(responses.POST,
@@ -47,21 +47,21 @@ def test_register_identity(mocker, api_client, key_store, private_key,
     mocker.patch('covata.delta.crypto.generate_private_key',
                  return_value=private_key)
 
-    identity_id = api_client.register_identity("1", {})
-    crypto_key = key_store.get_private_encryption_key(identity_id)
-    signing_key = key_store.get_private_signing_key(identity_id)
+    public_signing_key = crypto.serialize_public_key(public_key)
+    public_encryption_key = crypto.serialize_public_key(public_key)
+
+    identity_id = api_client.register_identity(public_encryption_key,
+                                               public_signing_key, "1", {})
 
     assert len(responses.calls) == 1
     assert identity_id == expected_id
-    assert key2bytes(crypto_key) == key2bytes(private_key)
-    assert key2bytes(signing_key) == key2bytes(private_key)
 
     request_body = json.loads(responses.calls[0].request.body.decode("utf-8"))
     expected_request_body = dict(
         externalId="1",
         metadata=dict(),
-        cryptoPublicKey=b64encode(key2bytes(public_key)).decode("utf-8"),
-        signingPublicKey=b64encode(key2bytes(public_key)).decode("utf-8"),
+        cryptoPublicKey=public_encryption_key,
+        signingPublicKey=public_signing_key
     )
 
     assert request_body == expected_request_body

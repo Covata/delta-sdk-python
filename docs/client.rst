@@ -12,10 +12,10 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-API Client
-==========
+Client
+======
 
 .. currentmodule:: covata.delta
 
-.. autoclass:: ApiClient
+.. autoclass:: Client
    :members:
