@@ -71,6 +71,7 @@ def test_get_identity_same_target(mocker, client, api_client):
 
     identity = client.get_identity(expected_id)
 
+    assert identity.parent == client
     assert identity.identity_id == expected_id
     assert identity.external_id == "1"
     assert identity.metadata == dict(name="Bob")
@@ -90,6 +91,7 @@ def test_get_identity_different_target(mocker, client, api_client):
 
     identity = client.get_identity(auth_id, expected_id)
 
+    assert identity.parent == client
     assert identity.identity_id == expected_id
     assert identity.external_id == "1"
     assert identity.metadata == dict(name="Bob")
