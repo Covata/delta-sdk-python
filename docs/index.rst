@@ -18,14 +18,20 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Covata Delta Python SDK's documentation!
-===================================================
+Covata Delta Python SDK
+=======================
+
+|Build Status| |Coverage Status| |Documentation Status|
+
+Covata Delta provides an easy to use framework for sharing secrets
+across networks, and organisations.
 
 .. toctree::
     :maxdepth: 4
     :caption: Contents:
 
-    get_started
+    self
+    quick_start
     client
     api
     crypto
@@ -37,3 +43,20 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+License
+=======
+
+Copyright 2017 Covata Limited or its affiliates - Released under the
+`Apache 2.0
+license <http://www.apache.org/licenses/LICENSE-2.0.html>`__.
+
+.. |Build Status|
+    image:: https://travis-ci.org/Covata/delta-sdk-python.svg?branch=master
+    :target: https://travis-ci.org/Covata/delta-sdk-python
+.. |Coverage Status|
+    image:: https://coveralls.io/repos/github/Covata/delta-sdk-python/badge.svg
+    :target: https://coveralls.io/github/Covata/delta-sdk-python
+.. |Documentation Status|
+    image:: https://readthedocs.org/projects/delta-sdk-python/badge/?version=latest
+    :target: http://delta-sdk-python.readthedocs.io/en/latest/?badge=latest
