@@ -12,7 +12,54 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-Getting Started
-===============
+Quick Start
+===========
 
-How to get started
+Requirements
+------------
+
+-  Python 2.7 + or 3.3 +
+-  pip 9.0.1 +
+-  virtualenv: ``sudo pip install virtualenv``
+-  pybuilder: ``pip install pybuilder``
+
+.. code:: bash
+
+    sudo pip install virtualenv
+    virtualenv venv
+    source venv/bin/activate
+    pip install pybuilder
+
+Building the project
+--------------------
+
+.. code:: bash
+
+    # 1. Check out the project
+    git clone https://github.com/Covata/delta-sdk-python.git
+    cd delta-sdk-python
+
+    # 2. Build the project
+    pyb
+
+Installing the binary distribution
+----------------------------------
+
+-  Using PyBuilder
+
+   .. code:: bash
+
+       pyb install
+
+-  Using Distutils
+
+   .. code:: bash
+
+       cd target/dist/delta-sdk-python-x.x.x-x
+       python setup.py install
+
+-  Using pip directly from Github
+
+   .. code:: bash
+
+       pip install git+git://github.com/Covata/delta-sdk-python.git@master
