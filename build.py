@@ -12,8 +12,20 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+"""
+Covata Delta Python SDK
+-----------------------
 
-from pybuilder.core import use_plugin, init
+Covata Delta provides an easy to use framework for sharing secrets across
+networks, and organisations.
+
+Links
+`````
+* Github repository <https://github.com/Covata/delta-sdk-python>
+
+"""
+
+from pybuilder.core import use_plugin, init, Author
 
 use_plugin("python.core")
 use_plugin("pypi:pybuilder_pytest")
@@ -25,11 +37,18 @@ use_plugin('python.pycharm')
 
 
 name = "delta-sdk-python"
+summary = "A framework for sharing secrets across networks, and organisations."
+description = __doc__
+authors = [Author("Covata", "")]
+version = "0.0.1-alpha"
+license = "Apache Software License"
+url = "https://github.com/Covata/delta-sdk-python"
 default_task = ['install_dependencies', 'analyze', 'publish']
 
 BUILD_DEPENDENCIES = [
     "pytest-mock",
     "pytest-cov",
+    "sphinx-rtd-theme",
     "responses"
 ]
 
@@ -38,7 +57,7 @@ def set_properties(project):
     # Tests
     for dep in BUILD_DEPENDENCIES:
         project.build_depends_on(dep)
-    project.set_property("dir_source_pytest_python", "src/unittest/python")
+    project.set_property("dir_source_pytest_python", "src/test/python")
     project.set_property("unittest_module_glob", "test_*")
 
     # Flake8
@@ -50,11 +69,9 @@ def set_properties(project):
                          ".git, .idea, target, venv, setup.py, build.py")
 
     # Docs
-    project.depends_on("sphinx-rtd-theme", "0.1.9")
     project.set_property("sphinx_config_path", "docs")
     project.set_property("sphinx_source_dir", "docs")
     project.set_property("sphinx_output_dir", "docs/_build")
 
     # Project
-    project.version = "0.0.1-alpha"
     project.depends_on_requirements("requirements.txt")
