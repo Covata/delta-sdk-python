@@ -37,7 +37,7 @@ class Client(utils.LogMixin):
         Creates a new DeltaClient instance from the provided configuration.
 
         :param config: the configuration for the client
-        :type config: dict[str, object]
+        :type config: dict[str, any]
         """
         self.__key_store = config["key_store"]
         self.__api_client = config["api_client"]
