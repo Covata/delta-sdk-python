@@ -27,12 +27,6 @@ def client(api_client, key_store):
 
 
 @pytest.fixture(scope="function")
-def mock_signer(mocker, api_client):
-    return mocker.patch.object(api_client, "signer",
-                               return_value=mocker.Mock())
-
-
-@pytest.fixture(scope="function")
 def api_client(key_store):
     return ApiClient(key_store)
 
