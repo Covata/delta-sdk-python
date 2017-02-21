@@ -17,12 +17,15 @@ from base64 import b64encode, b64decode
 
 import requests
 
-from covata.delta import utils
-from covata.delta import crypto
 from covata.delta import signer
+from covata.delta import utils
 
 
 class ApiClient(utils.LogMixin):
+    """
+    The Delta API Client is an abstraction over the Delta API for execution of
+    requests and responses.
+    """
 
     DELTA_URL = 'https://delta.covata.io/v1'        # type: str
     RESOURCE_IDENTITIES = '/identities'             # type: str
@@ -41,27 +44,28 @@ class ApiClient(utils.LogMixin):
     def key_store(self):
         return self.__key_store
 
-    def register_identity(self, external_id=None, metadata=None):
+    def register_identity(self, public_encryption_key, public_signing_key,
+                          external_id=None, metadata=None):
         """
         Creates a new identity in Delta with the provided metadata
         and external id.
 
+        :param string public_encryption_key: the public encryption key to
+        associate with the identity
+        :param string public_signing_key: the public signing key to associate
+        with the identity
         :param external_id: the external id to associate with the identity
         :param metadata: the metadata to associate with the identity
-        :return: the id of the newly created identity
+        :type public_signing_key: bytes
         :type external_id: str | None
         :type metadata: dict[str, str] | None
+        :return: the id of the newly created identity
         :rtype: str
         """
-        private_signing_key = crypto.generate_private_key()
-        private_encryption_key = crypto.generate_private_key()
-
-        public_signing_key = private_signing_key.public_key()
-        public_encryption_key = private_encryption_key.public_key()
 
         body = dict(
-            signingPublicKey=crypto.serialize_public_key(public_signing_key),
-            cryptoPublicKey=crypto.serialize_public_key(public_encryption_key),
+            signingPublicKey=public_signing_key,
+            cryptoPublicKey=public_encryption_key,
             externalId=external_id,
             metadata=metadata)
 
@@ -71,10 +75,6 @@ class ApiClient(utils.LogMixin):
         response.raise_for_status()
         identity_id = response.json()['identityId']
 
-        self.key_store.store_keys(
-            identity_id=identity_id,
-            private_signing_key=private_signing_key,
-            private_encryption_key=private_encryption_key)
         return identity_id
 
     def get_identity(self, requestor_id, identity_id):

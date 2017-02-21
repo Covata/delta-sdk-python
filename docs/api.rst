@@ -15,9 +15,6 @@
 API Client
 ==========
 
-The Delta API Client is an abstraction over the Delta API for execution of
-requests and responses.
-
 .. currentmodule:: covata.delta
 
 .. autoclass:: ApiClient
