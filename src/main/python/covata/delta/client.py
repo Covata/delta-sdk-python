@@ -59,7 +59,7 @@ class Client(utils.LogMixin):
         :type external_id: str | None
         :type metadata: dict[str, str] | None
         :return: the identity
-        :rtype: :class:`Identity`
+        :rtype: :class:`~.Identity`
         """
         private_signing_key = crypto.generate_private_key()
         private_encryption_key = crypto.generate_private_key()
@@ -87,7 +87,7 @@ class Client(utils.LogMixin):
         :param identity_id: the authenticating identity id
         :type identity_to_retrieve: str | None
         :return: the identity
-        :rtype: :class:`Identity`
+        :rtype: :class:`~.Identity`
         """
         response = self.api_client.get_identity(identity_id,
                                                 identity_id
@@ -118,11 +118,10 @@ class Identity:
         and external id.
 
         :param parent: the Delta client that constructed this instance
-        :param public_encryption_key: the public signing key of the identity
+        :param str public_encryption_key: the public signing key of the identity
         :param external_id: the external id of the identity
         :param metadata: the metadata belonging to the identity
-        :type parent: :class:`Client`
-        :type public_encryption_key: :class:`RSAPublicKey`
+        :type parent: :class:`~.Client`
         :type external_id: str | None
         :type metadata: dict[str, str] | None
         """
