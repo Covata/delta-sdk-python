@@ -19,7 +19,6 @@ from base64 import b64decode, b64encode
 import pytest
 import requests
 import responses
-from six.moves import urllib
 
 from covata.delta import ApiClient
 from covata.delta import crypto
@@ -325,40 +324,6 @@ def test_get_secret_content(api_client, mock_signer):
     assert retrieved_content == expected_content
 
 
-@responses.activate
-def test_get_identities_by_metadata(api_client, mock_signer):
-    requestor_id = "requestor_id"
-    expected_json = [dict(cryptoPublicKey="cryptoPublicKey",
-                          id="1",
-                          metadata=dict(name="test123"),
-                          version=2)]
-    responses.add(
-        responses.GET,
-        "{base_path}{resource}".format(
-            base_path=ApiClient.DELTA_URL,
-            resource=ApiClient.RESOURCE_IDENTITIES),
-        json=expected_json)
-
-    response = api_client.get_identities_by_metadata(
-        requestor_id=requestor_id,
-        metadata=dict(name="test123"),
-        page=1,
-        page_size=3)
-
-    mock_signer.assert_called_once_with(requestor_id)
-
-    assert len(responses.calls) == 1
-    assert response == expected_json
-    url = urllib.parse.urlparse(responses.calls[0].request.url)
-    query_params = dict(urllib.parse.parse_qsl(url.query))
-    expected_query_params = {
-        "metadata.name": "test123",
-        "page": "1",
-        "pageSize": "3"
-    }
-    assert query_params == expected_query_params
-
-
 def test_construct_signer(mocker, api_client, key_store, private_key):
     get_private_signing_key = mocker.patch.object(
         key_store, 'get_private_signing_key', return_value=private_key)
@@ -367,18 +332,6 @@ def test_construct_signer(mocker, api_client, key_store, private_key):
     r = requests.Request(url='https://test.com/stage/resource',
                          method='POST',
                          headers=dict(someKey="some value"),
-                         json=dict(content="abcd")) \
-        .prepare()
-    headers = dict(r.headers)
-    get_updated_headers = mocker.patch(
-        "covata.delta.signer.get_updated_headers",
-        return_value=mocker.Mock())
-    signer(r)
+                         json=dict(content="abcd"))
+    signer(r.prepare())
     get_private_signing_key.assert_called_once_with("mock_id")
-    get_updated_headers.assert_called_once_with(
-        identity_id="mock_id",
-        method=r.method,
-        url=r.url,
-        headers=headers,
-        payload=r.body,
-        private_signing_key=private_key)

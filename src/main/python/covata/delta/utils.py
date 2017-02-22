@@ -15,33 +15,30 @@
 import logging
 import inspect
 
-__all__ = ["LogMixin", "caller"]
+__all__ = ["LogMixin"]
 
 
-class LogMixin:
+class LogMixin(object):
     @property
     def logger(self):
-        return logging.getLogger(caller())
+        return logging.getLogger(self.__caller())
 
+    def __caller(self):
+        """
+        Gets the name of the caller in {package}.{module}.{class} format
 
-def caller():
-    """
-    Gets the name of the caller in {package}.{module}.{class} format
+        :return: the name of the caller
+        """
+        # type: () -> str
+        stack = inspect.stack()
+        if len(stack) < 3:
+            return ''
 
-    :return: the caller name
-    :rtype: str
-    """
-    # type: () -> str
-    stack = inspect.stack()
-    if len(stack) < 3:
-        return ''
+        caller_frame = stack[2][0]
+        module = inspect.getmodule(caller_frame)
+        name = filter(lambda x: x is not None, [
+            module.__name__ if module else None,
+            self.__class__.__name__])
 
-    caller_frame = stack[2][0]
-    module = inspect.getmodule(caller_frame)
-
-    name = filter(lambda x: x is not None, [
-        module.__name__ if module else None,
-        caller_frame.f_locals['self'].__class__.__name__
-        if 'self' in caller_frame.f_locals else None])
-    del caller_frame
-    return ".".join(name)
+        del caller_frame
+        return ".".join(name)
