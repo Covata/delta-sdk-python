@@ -50,10 +50,10 @@ class ApiClient(utils.LogMixin):
         Creates a new identity in Delta with the provided metadata
         and external id.
 
-        :param str public_encryption_key: the public encryption key to
-        associate with the identity
-        :param str public_signing_key: the public signing key to associate
-        with the identity
+        :param str public_encryption_key:
+            the public encryption key to associate with the identity
+        :param str public_signing_key:
+            the public signing key to associate with the identity
         :param external_id: the external id to associate with the identity
         :param metadata: the metadata to associate with the identity
         :type external_id: str | None
