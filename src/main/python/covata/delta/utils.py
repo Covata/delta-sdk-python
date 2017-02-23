@@ -15,8 +15,6 @@
 import logging
 import inspect
 
-__all__ = ["LogMixin", "caller"]
-
 
 class LogMixin:
     @property
@@ -44,3 +42,25 @@ def caller():
         if 'self' in caller_frame.f_locals else None])
     del caller_frame
     return ".".join(name)
+
+
+def check_arguments(arguments, test_type, test_function, fail_message):
+    def decorator(function):
+        def _f(*args, **kwargs):
+            for arg, value in kwargs.items():
+                if arg in arguments:
+                    if not any(value is t or isinstance(value, t)
+                               for t in test_type):
+                        raise TypeError(
+                            "{arg} must be in {type}, actual {actual}".format(
+                                arg=arg,
+                                type=test_type,
+                                actual=type(value).__name__))
+                    if not test_function(value):
+                        raise ValueError("{arg}:{msg} actual:{value}".format(
+                            arg=arg,
+                            msg=fail_message,
+                            value=value))
+            return function(*args, **kwargs)
+        return _f
+    return decorator

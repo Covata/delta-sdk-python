@@ -95,6 +95,10 @@ class ApiClient(utils.LogMixin):
         identity = response.json()
         return identity
 
+    @utils.check_arguments(
+        "page, page_size", [int, None],
+        lambda x: x > 0 if isinstance(x, int) else True,
+        "must be a non-zero positive integer")
     def get_identities_by_metadata(self, requestor_id, metadata,
                                    page=None, page_size=None):
         """
@@ -111,19 +115,12 @@ class ApiClient(utils.LogMixin):
         :return: a list of identities satisfying the request
         :rtype: list[dict[str, any]]
         """
-        if page is not None and not int(page) > 0:
-            raise ValueError("page must be an integer greater than zero")
-        if page_size is not None and not int(page_size) > 0:
-            raise ValueError("page size must be an integer greater than zero")
-
-        page_ = int(page) if page else None
-        page_size_ = int(page_size) if page_size else None
         metadata_ = dict(("metadata." + k, v) for k, v in metadata.items())
         response = requests.get(
             url="{base_url}{resource}".format(
                 base_url=self.DELTA_URL,
                 resource=self.RESOURCE_IDENTITIES),
-            params=dict(metadata_, page=page_, pageSize=page_size_),
+            params=dict(metadata_, page=page, pageSize=page_size),
             auth=self.signer(requestor_id))
         response.raise_for_status()
         return response.json()

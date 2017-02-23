@@ -326,8 +326,8 @@ def test_get_secret_content(api_client, mock_signer):
 
 
 @responses.activate
-@pytest.mark.parametrize("page", [1, 1.0, "1"])
-@pytest.mark.parametrize("page_size", [1, 2.0, "3"])
+@pytest.mark.parametrize("page", [1, 3, None])
+@pytest.mark.parametrize("page_size", [1, 3, None])
 def test_get_identities_by_metadata_with_valid_page_parameters(
         api_client, mock_signer, page, page_size):
     requestor_id = "requestor_id"
@@ -355,30 +355,38 @@ def test_get_identities_by_metadata_with_valid_page_parameters(
     url = urllib.parse.urlparse(responses.calls[0].request.url)
     query_params = dict(urllib.parse.parse_qsl(url.query))
     expected_query_params = {
-        "metadata.name": "test123",
-        "page": str(int(page)),
-        "pageSize": str(int(page_size))
+        "metadata.name": "test123"
     }
+
+    if page is not None:
+        expected_query_params["page"] = str(page)
+
+    if page_size is not None:
+        expected_query_params["pageSize"] = str(page_size)
+
     assert query_params == expected_query_params
 
 
-@pytest.mark.parametrize("page, page_size", [
-    (0, 3),
-    (-1.0, 1.0),
-    ("1", "-30")
+@pytest.mark.parametrize("page, page_size, exception", [
+    (0, 3, ValueError),
+    (1, 0, ValueError),
+    (-1, 10, ValueError),
+    (10, -1, ValueError),
+    (1.0, -1, TypeError),
+    (1, 1.0, TypeError),
+    ("3", 7.0, TypeError),
+    ("1", 3, TypeError)
 ])
 def test_get_identities_by_metadata_with_invalid_page_parameters(
-        api_client, mock_signer, page, page_size):
+        api_client, mock_signer, page, page_size, exception):
     requestor_id = "requestor_id"
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(exception):
         api_client.get_identities_by_metadata(
             requestor_id=requestor_id,
             metadata=dict(name="test123"),
             page=page,
             page_size=page_size)
     mock_signer.assert_not_called()
-    assert "must be an integer greater than zero" in str(excinfo.value)
-
 
 def test_construct_signer(mocker, api_client, key_store, private_key):
     get_private_signing_key = mocker.patch.object(
