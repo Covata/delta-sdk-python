@@ -110,6 +110,9 @@ def test_create_secret(mocker, client, api_client, private_key):
     mocker.patch('covata.delta.crypto.generate_initialisation_vector',
                  return_value=iv)
 
+    mocker.patch('covata.delta.crypto.encrypt',
+                 return_value=bytes('encrypted secret'.encode('utf-8')))
+
     mocker.patch('covata.delta.crypto.encrypt_key_with_public_key',
                  return_value=encrypted_key)
 
@@ -126,7 +129,8 @@ def test_create_secret(mocker, client, api_client, private_key):
                                 initialisationVector=iv,
                                 symmetricKey=encrypted_key)))
 
-    secret = client.create_secret(created_by_id, "this is my secret")
+    secret = client.create_secret(created_by_id,
+                                  "this is my secret".encode('utf-8'))
 
     assert secret.parent == client
     assert secret.id == expected_id
@@ -161,6 +165,9 @@ def test_create_secret_via_identity(mocker, client, api_client, private_key):
     mocker.patch('covata.delta.crypto.generate_initialisation_vector',
                  return_value=iv)
 
+    mocker.patch('covata.delta.crypto.encrypt',
+                 return_value=bytes('encrypted secret'.encode('utf-8')))
+
     mocker.patch('covata.delta.crypto.encrypt_key_with_public_key',
                  return_value=encrypted_key)
 
@@ -179,7 +186,7 @@ def test_create_secret_via_identity(mocker, client, api_client, private_key):
 
     identity = client.get_identity(created_by_id)
 
-    secret = identity.create_secret("this is my secret")
+    secret = identity.create_secret("this is my secret".encode('utf-8'))
 
     assert secret.parent == client
     assert secret.id == expected_id
