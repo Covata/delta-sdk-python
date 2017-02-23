@@ -19,6 +19,7 @@ from base64 import b64decode, b64encode
 import pytest
 import requests
 import responses
+from six.moves import urllib
 
 from covata.delta import ApiClient
 from covata.delta import crypto
@@ -322,6 +323,64 @@ def test_get_secret_content(api_client, mock_signer):
 
     assert len(responses.calls) == 1
     assert retrieved_content == expected_content
+
+
+@responses.activate
+@pytest.mark.parametrize("page", [1, 3.0, "5", None])
+@pytest.mark.parametrize("page_size", [1, "3", 5.0, None])
+def test_get_identities_by_metadata_with_valid_page_parameters(
+        api_client, mock_signer, page, page_size):
+    requestor_id = "requestor_id"
+    expected_json = [dict(cryptoPublicKey="cryptoPublicKey",
+                          id="1",
+                          metadata=dict(name="test123"),
+                          version=2)]
+    responses.add(
+        responses.GET,
+        "{base_path}{resource}".format(
+            base_path=ApiClient.DELTA_URL,
+            resource=ApiClient.RESOURCE_IDENTITIES),
+        json=expected_json)
+
+    response = api_client.get_identities_by_metadata(
+        requestor_id=requestor_id,
+        metadata=dict(name="test123"),
+        page=page,
+        page_size=page_size)
+
+    mock_signer.assert_called_once_with(requestor_id)
+
+    assert len(responses.calls) == 1
+    assert response == expected_json
+    url = urllib.parse.urlparse(responses.calls[0].request.url)
+    query_params = dict(urllib.parse.parse_qsl(url.query))
+    expected_query_params = {
+        "metadata.name": "test123"
+    }
+
+    if page is not None:
+        expected_query_params["page"] = str(int(page))
+
+    if page_size is not None:
+        expected_query_params["pageSize"] = str(int(page_size))
+
+    assert query_params == expected_query_params
+
+
+@responses.activate
+@pytest.mark.parametrize("page", [0, -3.0, "-5"])
+@pytest.mark.parametrize("page_size", [0, "-3", 5.0])
+def test_get_identities_by_metadata_with_invalid_page_parameters(
+        api_client, mock_signer, page, page_size):
+    requestor_id = "requestor_id"
+    with pytest.raises(ValueError) as excinfo:
+        api_client.get_identities_by_metadata(
+            requestor_id=requestor_id,
+            metadata=dict(name="test123"),
+            page=page,
+            page_size=page_size)
+    mock_signer.assert_not_called()
+    assert "must be a non-zero positive integer" in str(excinfo.value)
 
 
 def test_construct_signer(mocker, api_client, key_store, private_key):

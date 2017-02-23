@@ -17,8 +17,7 @@ from base64 import b64encode, b64decode
 
 import requests
 
-from . import signer
-from . import utils
+from . import signer, utils
 
 
 class ApiClient(utils.LogMixin):
@@ -94,6 +93,38 @@ class ApiClient(utils.LogMixin):
         response.raise_for_status()
         identity = response.json()
         return identity
+
+    @utils.check_arguments(
+        "page, page_size",
+        lambda x: True if x is None else int(x) > 0,
+        "must be a non-zero positive integer")
+    def get_identities_by_metadata(self, requestor_id, metadata,
+                                   page=None, page_size=None):
+        """
+        Gets a list of identities matching the given metadata key and value
+        pairs, bound by the pagination parameters.
+
+        :param str requestor_id: the authenticating identity id
+        :param metadata: the metadata key and value pairs to filter
+        :type metadata: dict[str, str]
+        :param page: the page number
+        :type page: int | None
+        :param page_size: the page size
+        :type page_size: int | None
+        :return: a list of identities satisfying the request
+        :rtype: list[dict[str, any]]
+        """
+        metadata_ = dict(("metadata." + k, v) for k, v in metadata.items())
+        response = requests.get(
+            url="{base_url}{resource}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_IDENTITIES),
+            params=dict(metadata_,
+                        page=int(page) if page else None,
+                        pageSize=int(page_size) if page_size else None),
+            auth=self.signer(requestor_id))
+        response.raise_for_status()
+        return response.json()
 
     def create_secret(self, requestor_id, content, encryption_details):
         """
