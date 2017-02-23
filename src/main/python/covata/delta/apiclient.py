@@ -17,8 +17,7 @@ from base64 import b64encode, b64decode
 
 import requests
 
-from . import signer
-from . import utils
+from . import signer, utils
 
 
 class ApiClient(utils.LogMixin):
@@ -96,8 +95,8 @@ class ApiClient(utils.LogMixin):
         return identity
 
     @utils.check_arguments(
-        "page, page_size", [int, None],
-        lambda x: x > 0 if isinstance(x, int) else True,
+        "page, page_size",
+        lambda x: True if x is None else int(x) > 0,
         "must be a non-zero positive integer")
     def get_identities_by_metadata(self, requestor_id, metadata,
                                    page=None, page_size=None):
@@ -120,7 +119,9 @@ class ApiClient(utils.LogMixin):
             url="{base_url}{resource}".format(
                 base_url=self.DELTA_URL,
                 resource=self.RESOURCE_IDENTITIES),
-            params=dict(metadata_, page=page, pageSize=page_size),
+            params=dict(metadata_,
+                        page=int(page) if page else None,
+                        pageSize=int(page_size) if page_size else None),
             auth=self.signer(requestor_id))
         response.raise_for_status()
         return response.json()

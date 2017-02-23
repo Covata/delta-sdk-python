@@ -326,8 +326,8 @@ def test_get_secret_content(api_client, mock_signer):
 
 
 @responses.activate
-@pytest.mark.parametrize("page", [1, 3, None])
-@pytest.mark.parametrize("page_size", [1, 3, None])
+@pytest.mark.parametrize("page", [1, 3.0, "5", None])
+@pytest.mark.parametrize("page_size", [1, "3", 5.0, None])
 def test_get_identities_by_metadata_with_valid_page_parameters(
         api_client, mock_signer, page, page_size):
     requestor_id = "requestor_id"
@@ -359,34 +359,33 @@ def test_get_identities_by_metadata_with_valid_page_parameters(
     }
 
     if page is not None:
-        expected_query_params["page"] = str(page)
+        expected_query_params["page"] = str(int(page))
 
     if page_size is not None:
-        expected_query_params["pageSize"] = str(page_size)
+        expected_query_params["pageSize"] = str(int(page_size))
 
     assert query_params == expected_query_params
 
 
-@pytest.mark.parametrize("page, page_size, exception", [
-    (0, 3, ValueError),
-    (1, 0, ValueError),
-    (-1, 10, ValueError),
-    (10, -1, ValueError),
-    (1.0, 1, TypeError),
-    (1, 1.0, TypeError),
-    ("3", 7.0, TypeError),
-    ("1", 3, TypeError)
+@pytest.mark.parametrize("page, page_size", [
+    (0, 3),
+    (1, 0),
+    (-1, 10),
+    (10, -1.0),
+    ("-50", 1)
 ])
 def test_get_identities_by_metadata_with_invalid_page_parameters(
-        api_client, mock_signer, page, page_size, exception):
+        api_client, mock_signer, page, page_size):
     requestor_id = "requestor_id"
-    with pytest.raises(exception):
+    with pytest.raises(ValueError) as excinfo:
         api_client.get_identities_by_metadata(
             requestor_id=requestor_id,
             metadata=dict(name="test123"),
             page=page,
             page_size=page_size)
     mock_signer.assert_not_called()
+    assert "must be a non-zero positive integer" in str(excinfo.value)
+
 
 def test_construct_signer(mocker, api_client, key_store, private_key):
     get_private_signing_key = mocker.patch.object(

@@ -14,6 +14,7 @@
 
 import logging
 import inspect
+import functools
 
 
 class LogMixin:
@@ -44,23 +45,18 @@ def caller():
     return ".".join(name)
 
 
-def check_arguments(arguments, test_type, test_function, fail_message):
+def check_arguments(arguments, validation_function, fail_message):
     def decorator(function):
+        @functools.wraps(function)
         def _f(*args, **kwargs):
-            for arg, value in kwargs.items():
-                if arg in arguments:
-                    if not any(value is t or isinstance(value, t)
-                               for t in test_type):
-                        raise TypeError(
-                            "{arg} must be in {type}, actual {actual}".format(
-                                arg=arg,
-                                type=test_type,
-                                actual=type(value).__name__))
-                    if not test_function(value):
-                        raise ValueError("{arg}:{msg} actual:{value}".format(
-                            arg=arg,
-                            msg=fail_message,
-                            value=value))
+            keys, _, _, _ = inspect.getargspec(function)
+            ins = dict(zip(keys, args))
+            ins.update(kwargs)
+            for arg, value in ins.items():
+                if arg not in arguments:
+                    continue
+                if not validation_function(value):
+                    raise ValueError("{} {}".format(arg, fail_message))
             return function(*args, **kwargs)
         return _f
     return decorator
