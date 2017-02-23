@@ -372,7 +372,7 @@ def test_get_identities_by_metadata_with_valid_page_parameters(
     (1, 0, ValueError),
     (-1, 10, ValueError),
     (10, -1, ValueError),
-    (1.0, -1, TypeError),
+    (1.0, 1, TypeError),
     (1, 1.0, TypeError),
     ("3", 7.0, TypeError),
     ("1", 3, TypeError)
