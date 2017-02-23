@@ -52,9 +52,8 @@ def check_arguments(arguments, validation_function, fail_message):
             keys, _, _, _ = inspect.getargspec(function)
             ins = dict(zip(keys, args))
             ins.update(kwargs)
-            for arg, value in ins.items():
-                if arg not in arguments:
-                    continue
+            generator = ((x, y) for x, y in ins.items() if x in arguments)
+            for arg, value in generator:
                 if not validation_function(value):
                     raise ValueError("{} {}".format(arg, fail_message))
             return function(*args, **kwargs)
