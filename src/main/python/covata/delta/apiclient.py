@@ -197,10 +197,7 @@ class ApiClient(utils.LogMixin):
                 secret_id=secret_id),
             auth=self.signer(requestor_id))
         response.raise_for_status()
-        secret = response.json()
-        for k, v in secret["encryptionDetails"].items():
-            secret["encryptionDetails"][k] = b64decode(v)
-        return secret
+        return response.json()
 
     def get_secret_metadata(self, requestor_id, secret_id):
         """

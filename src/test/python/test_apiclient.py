@@ -234,11 +234,6 @@ def test_get_secret(api_client, mock_signer):
             initialisationVector=b64encode(iv).decode("utf-8")
         ))
 
-    expected_json = dict(response_json, encryptionDetails=dict(
-        symmetricKey=key,
-        initialisationVector=iv
-    ))
-
     responses.add(responses.GET,
                   "{base_path}{resource}/{secret_id}".format(
                       base_path=ApiClient.DELTA_URL,
@@ -252,7 +247,7 @@ def test_get_secret(api_client, mock_signer):
     mock_signer.assert_called_once_with(requestor_id)
 
     assert len(responses.calls) == 1
-    assert response == expected_json
+    assert response == response_json
 
 
 @responses.activate
