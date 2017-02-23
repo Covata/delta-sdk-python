@@ -367,13 +367,9 @@ def test_get_identities_by_metadata_with_valid_page_parameters(
     assert query_params == expected_query_params
 
 
-@pytest.mark.parametrize("page, page_size", [
-    (0, 3),
-    (1, 0),
-    (-1, 10),
-    (10, -1.0),
-    ("-50", 1)
-])
+@responses.activate
+@pytest.mark.parametrize("page", [0, -3.0, "-5"])
+@pytest.mark.parametrize("page_size", [0, "-3", 5.0])
 def test_get_identities_by_metadata_with_invalid_page_parameters(
         api_client, mock_signer, page, page_size):
     requestor_id = "requestor_id"
