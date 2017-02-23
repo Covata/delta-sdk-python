@@ -326,7 +326,10 @@ def test_get_secret_content(api_client, mock_signer):
 
 
 @responses.activate
-def test_get_identities_by_metadata(api_client, mock_signer):
+@pytest.mark.parametrize("page", [1, 1.0, "1"])
+@pytest.mark.parametrize("page_size", [1, 2.0, "3"])
+def test_get_identities_by_metadata_with_valid_page_parameters(
+        api_client, mock_signer, page, page_size):
     requestor_id = "requestor_id"
     expected_json = [dict(cryptoPublicKey="cryptoPublicKey",
                           id="1",
@@ -342,8 +345,8 @@ def test_get_identities_by_metadata(api_client, mock_signer):
     response = api_client.get_identities_by_metadata(
         requestor_id=requestor_id,
         metadata=dict(name="test123"),
-        page=1,
-        page_size=3)
+        page=page,
+        page_size=page_size)
 
     mock_signer.assert_called_once_with(requestor_id)
 
@@ -353,10 +356,28 @@ def test_get_identities_by_metadata(api_client, mock_signer):
     query_params = dict(urllib.parse.parse_qsl(url.query))
     expected_query_params = {
         "metadata.name": "test123",
-        "page": "1",
-        "pageSize": "3"
+        "page": str(int(page)),
+        "pageSize": str(int(page_size))
     }
     assert query_params == expected_query_params
+
+
+@pytest.mark.parametrize("page, page_size", [
+    (0, 3),
+    (-1.0, 1.0),
+    ("1", "-30")
+])
+def test_get_identities_by_metadata_with_invalid_page_parameters(
+        api_client, mock_signer, page, page_size):
+    requestor_id = "requestor_id"
+    with pytest.raises(ValueError) as excinfo:
+        api_client.get_identities_by_metadata(
+            requestor_id=requestor_id,
+            metadata=dict(name="test123"),
+            page=page,
+            page_size=page_size)
+    mock_signer.assert_not_called()
+    assert "must be an integer greater than zero" in str(excinfo.value)
 
 
 def test_construct_signer(mocker, api_client, key_store, private_key):
