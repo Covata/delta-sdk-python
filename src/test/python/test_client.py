@@ -20,6 +20,10 @@ from covata.delta import Client
 from covata.delta import ApiClient
 
 
+iv = "01234567".encode('utf-8')
+key = "0123456789abcdef".encode('utf-8')
+
+
 @pytest.fixture(scope="function")
 def client(api_client, key_store):
     return Client(dict(api_client=api_client,
@@ -29,6 +33,21 @@ def client(api_client, key_store):
 @pytest.fixture(scope="function")
 def api_client(key_store):
     return ApiClient(key_store)
+
+
+@pytest.fixture(scope="function")
+def mock_crypto(mocker):
+    mocker.patch('covata.delta.crypto.generate_secret_key',
+                 return_value=bytes(key))
+
+    mocker.patch('covata.delta.crypto.generate_initialisation_vector',
+                 return_value=bytes(iv))
+
+    mocker.patch('covata.delta.crypto.encrypt',
+                 return_value=bytes('encrypted secret'.encode('utf-8')))
+
+    mocker.patch('covata.delta.crypto.encrypt_key_with_public_key',
+                 return_value=bytes('encrypted key'.encode('utf-8')))
 
 
 def test_create_identity(mocker, client, api_client, key_store, private_key,
@@ -92,29 +111,13 @@ def test_get_identity_different_target(mocker, client, api_client):
     assert identity.public_encryption_key == "crypto_public_key"
 
 
-def test_create_secret(mocker, client, api_client, private_key):
+def test_create_secret(mocker, client, api_client, key_store, private_key):
     expected_id = str(uuid.uuid4())
     rsa_key_owner_id = str(uuid.uuid4())
     created_by_id = str(uuid.uuid4())
 
-    secret_key = "0123456789abcdef"
-    iv = "01234567"
-    encrypted_key = "fedcba9876543210"
-
-    mocker.patch('covata.delta.FileSystemKeyStore.get_private_encryption_key',
-                 return_value=private_key)
-
-    mocker.patch('covata.delta.crypto.generate_secret_key',
-                 return_value=secret_key)
-
-    mocker.patch('covata.delta.crypto.generate_initialisation_vector',
-                 return_value=iv)
-
-    mocker.patch('covata.delta.crypto.encrypt',
-                 return_value=bytes('encrypted secret'.encode('utf-8')))
-
-    mocker.patch('covata.delta.crypto.encrypt_key_with_public_key',
-                 return_value=encrypted_key)
+    mocker.patch.object(key_store, "get_private_encryption_key",
+                        return_value=private_key)
 
     mocker.patch.object(api_client, "create_secret",
                         return_value=dict(id=expected_id))
@@ -127,7 +130,7 @@ def test_create_secret(mocker, client, api_client, private_key):
                             createdBy=created_by_id,
                             encryptionDetails=dict(
                                 initialisationVector=iv,
-                                symmetricKey=encrypted_key)))
+                                symmetricKey=key)))
 
     secret = client.create_secret(created_by_id,
                                   "this is my secret".encode('utf-8'))
@@ -138,16 +141,13 @@ def test_create_secret(mocker, client, api_client, private_key):
     assert secret.rsa_key_owner == rsa_key_owner_id
     assert secret.created_by == created_by_id
     assert secret.encryption_details.initialisation_vector == iv
-    assert secret.encryption_details.symmetric_key == encrypted_key
+    assert secret.encryption_details.symmetric_key == key
 
 
-def test_create_secret_via_identity(mocker, client, api_client, private_key):
+def test_create_secret_via_identity(mocker, client, api_client, key_store,
+                                    private_key):
     expected_id = str(uuid.uuid4())
     created_by_id = str(uuid.uuid4())
-
-    secret_key = "0123456789abcdef"
-    iv = "01234567"
-    encrypted_key = "fedcba9876543210"
 
     mocker.patch.object(api_client, "get_identity",
                         return_value=dict(version=1,
@@ -156,20 +156,8 @@ def test_create_secret_via_identity(mocker, client, api_client, private_key):
                                           cryptoPublicKey="crypto_public_key",
                                           metadata=dict(name="Bob")))
 
-    mocker.patch('covata.delta.FileSystemKeyStore.get_private_encryption_key',
-                 return_value=private_key)
-
-    mocker.patch('covata.delta.crypto.generate_secret_key',
-                 return_value=secret_key)
-
-    mocker.patch('covata.delta.crypto.generate_initialisation_vector',
-                 return_value=iv)
-
-    mocker.patch('covata.delta.crypto.encrypt',
-                 return_value=bytes('encrypted secret'.encode('utf-8')))
-
-    mocker.patch('covata.delta.crypto.encrypt_key_with_public_key',
-                 return_value=encrypted_key)
+    mocker.patch.object(key_store, "get_private_encryption_key",
+                        return_value=private_key)
 
     mocker.patch.object(api_client, "create_secret",
                         return_value=dict(id=expected_id))
@@ -182,7 +170,7 @@ def test_create_secret_via_identity(mocker, client, api_client, private_key):
                             createdBy=created_by_id,
                             encryptionDetails=dict(
                                 initialisationVector=iv,
-                                symmetricKey=encrypted_key)))
+                                symmetricKey=key)))
 
     identity = client.get_identity(created_by_id)
 
@@ -194,4 +182,4 @@ def test_create_secret_via_identity(mocker, client, api_client, private_key):
     assert secret.rsa_key_owner == created_by_id
     assert secret.created_by == created_by_id
     assert secret.encryption_details.initialisation_vector == iv
-    assert secret.encryption_details.symmetric_key == encrypted_key
+    assert secret.encryption_details.symmetric_key == key
