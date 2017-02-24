@@ -15,10 +15,9 @@
 from __future__ import absolute_import
 
 from . import crypto
-from . import utils
 
 
-class Client(utils.LogMixin):
+class Client:
     """
     The main entry point for the Delta SDK.
 
@@ -84,7 +83,7 @@ class Client(utils.LogMixin):
         """
         Gets the identity matching the given identity id.
 
-        :param identity_id: the authenticating identity id
+        :param str identity_id: the authenticating identity id
         :type identity_to_retrieve: str | None
         :return: the identity
         :rtype: :class:`~.Identity`
@@ -96,8 +95,33 @@ class Client(utils.LogMixin):
         return Identity(self,
                         response["id"],
                         response["cryptoPublicKey"],
-                        response["externalId"],
-                        response["metadata"])
+                        response.get("externalId"),
+                        response.get("metadata"))
+
+    def get_identities_by_metadata(self, identity_id, metadata,
+                                   page=None, page_size=None):
+        """
+        Gets a list of identities matching the given metadata key and value
+        pairs, bound by the pagination parameters.
+
+        :param str identity_id: the authenticating identity id
+        :param metadata: the metadata key and value pairs to filter
+        :type metadata: dict[str, str]
+        :param page: the page number
+        :type page: int | None
+        :param page_size: the page size
+        :type page_size: int | None
+        :return: a list of :class:`~.Identity` objects satisfying the request
+        :rtype: list[:class:`~.Identity`]
+        """
+        identities = self.api_client.get_identities_by_metadata(
+            identity_id, metadata, page, page_size)
+        for identity in identities:
+            yield Identity(self,
+                           identity["id"],
+                           identity["cryptoPublicKey"],
+                           identity.get("externalId"),
+                           identity.get("metadata"))
 
     def create_secret(self, identity_id, content):
         """
@@ -201,6 +225,33 @@ class Identity:
     def metadata(self):
         return self.__metadata
 
+    def get_identity(self, identity_to_retrieve=None):
+        """
+        Gets the identity matching the given identity id.
+
+        :type identity_to_retrieve: str | None
+        :return: the identity
+        :rtype: :class:`~.Identity`
+        """
+        return self.parent.get_identity(self.id, identity_to_retrieve)
+
+    def get_identities_by_metadata(self, metadata, page=None, page_size=None):
+        """
+        Gets a list of identities matching the given metadata key and value
+        pairs, bound by the pagination parameters.
+
+        :param metadata: the metadata key and value pairs to filter
+        :type metadata: dict[str, str]
+        :param page: the page number
+        :type page: int | None
+        :param page_size: the page size
+        :type page_size: int | None
+        :return: a list of :class:`~.Identity` objects satisfying the request
+        :rtype: list[:class:`~.Identity`]
+        """
+        return self.parent.get_identities_by_metadata(
+            self.id, metadata, page, page_size)
+
     def create_secret(self, content):
         """
         Creates a new secret in Delta with the given contents.
@@ -210,6 +261,11 @@ class Identity:
         :rtype: :class:`~.Secret`
         """
         return self.parent.create_secret(self.id, content)
+
+    def __repr__(self):
+        return "{cls}(id={id})" \
+            .format(cls=self.__class__.__name__,
+                    id=self.id)
 
 
 class Secret:
@@ -267,6 +323,11 @@ class Secret:
     @property
     def encryption_details(self):
         return self.__encryption_details
+
+    def __repr__(self):
+        return "{cls}(id={id})" \
+            .format(cls=self.__class__.__name__,
+                    id=self.id)
 
 
 class EncryptionDetails:
