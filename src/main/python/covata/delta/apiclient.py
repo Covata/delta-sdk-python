@@ -98,6 +98,8 @@ class ApiClient:
         "page, page_size",
         lambda x: True if x is None else int(x) > 0,
         "must be a non-zero positive integer")
+    @utils.check_arguments(
+        "metadata", lambda x: x, "must be a non-empty dict[str, str]")
     def get_identities_by_metadata(self, requestor_id, metadata,
                                    page=None, page_size=None):
         """
