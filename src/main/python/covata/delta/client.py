@@ -362,7 +362,7 @@ class Secret:
     """
 
     def __init__(self, parent, id, created, rsa_key_owner, created_by,
-                 encryption_details, base_secret_id):
+                 encryption_details, base_secret_id=None):
         """
         Creates a new secret with the given parameters.
 
@@ -407,10 +407,18 @@ class Secret:
     def encryption_details(self):
         return self.__encryption_details
 
+    @property
     def base_secret_id(self):
         return self.__base_secret_id
 
     def get_content(self):
+        """
+        Gets the content of a secret, encrypted with the details defined in the
+        encryption_details of this secret and encoded in base64.
+
+        :return: the content of the secret encoded in base64
+        :rtype: str
+        """
         return self.parent.get_secret_content(
             self.rsa_key_owner,
             self.id,
@@ -418,6 +426,18 @@ class Secret:
             self.encryption_details.initialisation_vector)
 
     def share_with(self, identity_id):
+        """
+        Shares this secret with the target recipient identity. This action
+        will create a new (derived) secret in Covata Delta, and the new
+        secret will be returned to the caller.
+
+        The credentials of the RSA key owner must be present in the local
+        key store.
+
+        :param identity_id: the recipient identity id
+        :return: the derived secret
+        :rtype: :class:`~.Secret`
+        """
         return self.parent.share_secret(
             self.created_by,
             identity_id,
