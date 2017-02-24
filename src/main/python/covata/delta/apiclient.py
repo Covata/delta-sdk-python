@@ -13,7 +13,6 @@
 #   limitations under the License.
 
 from __future__ import absolute_import
-from base64 import b64encode, b64decode
 
 import requests
 
@@ -131,25 +130,24 @@ class ApiClient(utils.LogMixin):
         Creates a new secret in Delta. The key used for encryption should
         be encrypted with the key of the authenticating identity.
 
+        It is the responsibility of the caller to ensure that the contents
+        and key material in the encryption details are properly represented
+        in a suitable string encoding (such as base64).
+
         :param str requestor_id: the authenticating identity id
-        :param bytes content: the contents of the secret
+        :param str content: the contents of the secret
         :param encryption_details: the encryption details
-        :type encryption_details: dict[str, bytes]
+        :type encryption_details: dict[str, str]
         :return: the created base secret
         :rtype: dict[str, str]
         """
-        content_b64 = b64encode(content).decode('utf-8')
-        encryption_details_b64 = dict(
-            (k, b64encode(v).decode('utf-8'))
-            for k, v in encryption_details.items())
-
         response = requests.post(
             url="{base_url}{resource}".format(
                 base_url=self.DELTA_URL,
                 resource=self.RESOURCE_SECRETS),
             json=dict(
-                content=content_b64,
-                encryptionDetails=encryption_details_b64
+                content=content,
+                encryptionDetails=encryption_details
             ),
             auth=self.signer(requestor_id))
 
@@ -165,6 +163,10 @@ class ApiClient(utils.LogMixin):
         be provided. This call will result in a new derived secret being created
         and returned as a response.
 
+        It is the responsibility of the caller to ensure that the contents
+        and key material in the encryption details are properly represented
+        in a suitable string encoding (such as base64).
+
         :param str requestor_id: the authenticating identity id
         :param bytes content: the contents of the secret
         :param encryption_details: the encryption details
@@ -174,18 +176,13 @@ class ApiClient(utils.LogMixin):
         :return: the created derived secret
         :rtype: dict[str, str]
         """
-        content_b64 = b64encode(content).decode('utf-8')
-        encryption_details_b64 = dict(
-            (k, b64encode(v).decode('utf-8'))
-            for k, v in encryption_details.items())
-
         response = requests.post(
             url="{base_url}{resource}".format(
                 base_url=self.DELTA_URL,
                 resource=self.RESOURCE_SECRETS),
             json=dict(
-                content=content_b64,
-                encryptionDetails=encryption_details_b64,
+                content=content,
+                encryptionDetails=encryption_details,
                 baseSecret=base_secret_id,
                 rsaKeyOwner=rsa_key_owner_id
             ),
@@ -258,7 +255,7 @@ class ApiClient(utils.LogMixin):
         :param str requestor_id: the authenticating identity id
         :param str secret_id: the secret id to be retrieved
         :return: the retrieved secret
-        :rtype: bytes
+        :rtype: dict[str, str]
         """
         response = requests.get(
             url="{base_url}{resource}/{secret_id}/content".format(
@@ -268,7 +265,7 @@ class ApiClient(utils.LogMixin):
             auth=self.signer(requestor_id))
 
         response.raise_for_status()
-        return b64decode(response.json())
+        return response.json()
 
     def update_secret_metadata(self,
                                requestor_id,
