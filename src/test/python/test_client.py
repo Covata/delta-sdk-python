@@ -12,16 +12,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-
 import pytest
 import uuid
 
 from covata.delta import Client
 from covata.delta import ApiClient
-
-
-iv = "01234567".encode('utf-8')
-key = "0123456789abcdef".encode('utf-8')
 
 
 @pytest.fixture(scope="function")
@@ -37,17 +32,23 @@ def api_client(key_store):
 
 @pytest.fixture(scope="function")
 def mock_crypto(mocker):
+    iv = "01234567".encode('utf-8')
+    key = "0123456789abcdef".encode('utf-8')
+
     mocker.patch('covata.delta.crypto.generate_secret_key',
-                 return_value=bytes(key))
+                 return_value=key)
 
     mocker.patch('covata.delta.crypto.generate_initialisation_vector',
-                 return_value=bytes(iv))
+                 return_value=iv)
 
     mocker.patch('covata.delta.crypto.encrypt',
-                 return_value=bytes('encrypted secret'.encode('utf-8')))
+                 return_value=('encrypted secret'.encode('utf-8'),
+                               'tag'.encode('utf-8')))
 
     mocker.patch('covata.delta.crypto.encrypt_key_with_public_key',
-                 return_value=bytes('encrypted key'.encode('utf-8')))
+                 return_value='encrypted key'.encode('utf-8'))
+
+    return {"iv": iv, "key": key}
 
 
 def test_create_identity(mocker, client, api_client, key_store, private_key,
@@ -111,7 +112,8 @@ def test_get_identity_different_target(mocker, client, api_client):
     assert identity.public_encryption_key == "crypto_public_key"
 
 
-def test_create_secret(mocker, client, api_client, key_store, private_key):
+def test_create_secret(mocker, client, api_client, key_store, private_key,
+                       mock_crypto):
     expected_id = str(uuid.uuid4())
     rsa_key_owner_id = str(uuid.uuid4())
     created_by_id = str(uuid.uuid4())
@@ -129,8 +131,8 @@ def test_create_secret(mocker, client, api_client, key_store, private_key):
                             rsaKeyOwner=rsa_key_owner_id,
                             createdBy=created_by_id,
                             encryptionDetails=dict(
-                                initialisationVector=iv,
-                                symmetricKey=key)))
+                                initialisationVector=mock_crypto["iv"],
+                                symmetricKey=mock_crypto["key"])))
 
     secret = client.create_secret(created_by_id,
                                   "this is my secret".encode('utf-8'))
@@ -140,12 +142,12 @@ def test_create_secret(mocker, client, api_client, key_store, private_key):
     assert secret.created == "12345"
     assert secret.rsa_key_owner == rsa_key_owner_id
     assert secret.created_by == created_by_id
-    assert secret.encryption_details.initialisation_vector == iv
-    assert secret.encryption_details.symmetric_key == key
+    assert secret.encryption_details.initialisation_vector == mock_crypto["iv"]
+    assert secret.encryption_details.symmetric_key == mock_crypto["key"]
 
 
 def test_create_secret_via_identity(mocker, client, api_client, key_store,
-                                    private_key):
+                                    private_key, mock_crypto):
     expected_id = str(uuid.uuid4())
     created_by_id = str(uuid.uuid4())
 
@@ -169,8 +171,8 @@ def test_create_secret_via_identity(mocker, client, api_client, key_store,
                             rsaKeyOwner=created_by_id,
                             createdBy=created_by_id,
                             encryptionDetails=dict(
-                                initialisationVector=iv,
-                                symmetricKey=key)))
+                                initialisationVector=mock_crypto["iv"],
+                                symmetricKey=mock_crypto["key"])))
 
     identity = client.get_identity(created_by_id)
 
@@ -181,5 +183,5 @@ def test_create_secret_via_identity(mocker, client, api_client, key_store,
     assert secret.created == "12345"
     assert secret.rsa_key_owner == created_by_id
     assert secret.created_by == created_by_id
-    assert secret.encryption_details.initialisation_vector == iv
-    assert secret.encryption_details.symmetric_key == key
+    assert secret.encryption_details.initialisation_vector == mock_crypto["iv"]
+    assert secret.encryption_details.symmetric_key == mock_crypto["key"]

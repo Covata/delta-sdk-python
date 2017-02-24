@@ -94,10 +94,10 @@ class Client(utils.LogMixin):
             identity_to_retrieve if identity_to_retrieve else identity_id)
 
         return Identity(self,
-                        response.get("id"),
-                        response.get("cryptoPublicKey"),
-                        response.get("externalId"),
-                        response.get("metadata"))
+                        response["id"],
+                        response["cryptoPublicKey"],
+                        response["externalId"],
+                        response["metadata"])
 
     def create_secret(self, identity_id, content):
         """
@@ -111,21 +111,21 @@ class Client(utils.LogMixin):
         secret_key = crypto.generate_secret_key()
         iv = crypto.generate_initialisation_vector()
 
-        crypto.encrypt(content, secret_key, iv)
-
-        public_encryption_key = self.key_store.get_private_encryption_key(
+        public_key = self.key_store.get_private_encryption_key(
             identity_id).public_key()
 
-        encrypted_key = crypto.encrypt_key_with_public_key(
-            secret_key, public_encryption_key)
-
+        encrypted_key = crypto.encrypt_key_with_public_key(secret_key,
+                                                           public_key)
+        cipher_text, tag = crypto.encrypt(content, secret_key, iv)
         response = self.api_client.create_secret(
-            identity_id,
-            content,
-            {"symmetricKey": encrypted_key,
-             "initialisationVector": iv})
+            requestor_id=id,
+            content=cipher_text + tag,
+            encryption_details=dict(
+                symmetricKey=encrypted_key,
+                initialisationVector=iv
+            ))
 
-        return self.get_secret(identity_id, response.get("id"))
+        return self.get_secret(identity_id, response["id"])
 
     def get_secret(self, identity_id, secret_id):
         """
@@ -139,14 +139,13 @@ class Client(utils.LogMixin):
         response = self.api_client.get_secret(identity_id, secret_id)
 
         return Secret(self,
-                      response.get("id"),
-                      response.get("created"),
-                      response.get("rsaKeyOwner"),
-                      response.get("createdBy"),
+                      response["id"],
+                      response["created"],
+                      response["rsaKeyOwner"],
+                      response["createdBy"],
                       EncryptionDetails(
-                          response.get("encryptionDetails").get("symmetricKey"),
-                          response.get(
-                              "encryptionDetails").get("initialisationVector")
+                          response["encryptionDetails"]["symmetricKey"],
+                          response["encryptionDetails"]["initialisationVector"]
                       ))
 
 
