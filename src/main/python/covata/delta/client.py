@@ -15,10 +15,9 @@
 from __future__ import absolute_import
 
 from . import crypto
-from . import utils
 
 
-class Client(utils.LogMixin):
+class Client:
     """
     The main entry point for the Delta SDK.
 

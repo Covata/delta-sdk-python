@@ -20,7 +20,7 @@ import requests
 from . import signer, utils
 
 
-class ApiClient(utils.LogMixin):
+class ApiClient:
     """
     The Delta API Client is an abstraction over the Delta API for execution of
     requests and responses.

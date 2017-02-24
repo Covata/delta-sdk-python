@@ -45,8 +45,35 @@ def test_save__should__fail_when_key_exists(fs_key_store, private_key):
     assert expected in str(excinfo.value)
 
 
-def test_save__should__fail_when_type_is_not_rsaprivatekey(fs_key_store):
+def test_store_keys__should__fail_when_type_is_not_rsaprivatekey(fs_key_store):
     with pytest.raises(TypeError) as excinfo:
         fs_key_store.store_keys("mock_id", "key", "crypto_key")
     expected = "private_key must be an instance of RSAPrivateKey, actual: str"
+    assert expected in str(excinfo.value)
+
+
+@pytest.mark.parametrize("id", ["", None])
+def test_store_keys__should__fail_when_id_is_invalid(
+        fs_key_store, private_key, id):
+    with pytest.raises(ValueError) as excinfo:
+        fs_key_store.store_keys(id, private_key, private_key)
+    expected = "identity_id must be a nonempty string"
+    assert expected in str(excinfo.value)
+
+
+@pytest.mark.parametrize("id", ["", None])
+def test_get_signing_key__should__fail_when_id_is_invalid(
+        fs_key_store, id):
+    with pytest.raises(ValueError) as excinfo:
+        fs_key_store.get_private_signing_key(id)
+    expected = "identity_id must be a nonempty string"
+    assert expected in str(excinfo.value)
+
+
+@pytest.mark.parametrize("id", ["", None])
+def test_get_signing_key__should__fail_when_id_is_invalid(
+        fs_key_store, id):
+    with pytest.raises(ValueError) as excinfo:
+        fs_key_store.get_private_encryption_key(id)
+    expected = "identity_id must be a nonempty string"
     assert expected in str(excinfo.value)
