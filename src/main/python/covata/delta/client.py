@@ -199,7 +199,7 @@ class Identity:
         :param metadata: the metadata belonging to the identity
         :type metadata: dict[str, str] | None
         """
-        self.__parent = parent  # type: Client
+        self.__parent = parent
         self.__id = id
         self.__public_encryption_key = public_encryption_key
         self.__external_id = external_id
