@@ -59,3 +59,9 @@ def check_arguments(arguments, validation_function, fail_message):
             return function(*args, **kwargs)
         return _f
     return decorator
+
+
+def check_id(arguments):
+    return check_arguments(arguments,
+                           lambda x: x is not None and str(x) is not "",
+                           "must be a nonempty string")
