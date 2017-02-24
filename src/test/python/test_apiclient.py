@@ -364,7 +364,7 @@ def test_get_identities_by_metadata_with_valid_page_parameters(
 @responses.activate
 @pytest.mark.parametrize("page", [0, -3.0, "-5"])
 @pytest.mark.parametrize("page_size", [0, "-3", 5.0])
-def test_get_identities_by_metadata_with_invalid_page_parameters(
+def test_get_identities_by_metadata__should__fail_when_page_is_invalid(
         api_client, mock_signer, page, page_size):
     requestor_id = "requestor_id"
     with pytest.raises(ValueError) as excinfo:
@@ -375,6 +375,19 @@ def test_get_identities_by_metadata_with_invalid_page_parameters(
             page_size=page_size)
     mock_signer.assert_not_called()
     assert "must be a non-zero positive integer" in str(excinfo.value)
+
+
+@responses.activate
+@pytest.mark.parametrize("metadata", [{}, None])
+def test_get_identities_by_metadata__should__fail_when_metadata_is_empty(
+        api_client, mock_signer, metadata):
+    requestor_id = "requestor_id"
+    with pytest.raises(ValueError) as excinfo:
+        api_client.get_identities_by_metadata(
+            requestor_id=requestor_id,
+            metadata=metadata)
+    mock_signer.assert_not_called()
+    assert "metadata must be a non-empty dict[str, str]" in str(excinfo.value)
 
 
 def test_construct_signer(mocker, api_client, key_store, private_key):

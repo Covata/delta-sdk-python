@@ -12,6 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import base64
 import shutil
 import tempfile
 
@@ -51,7 +52,8 @@ def key2bytes():
                 format=serialization.PrivateFormat.PKCS8,
                 encryption_algorithm=serialization.NoEncryption())
         elif isinstance(key, rsa.RSAPublicKey):
-            return key.public_bytes(
+            der = key.public_bytes(
                 encoding=serialization.Encoding.DER,
                 format=serialization.PublicFormat.SubjectPublicKeyInfo)
+            return base64.b64encode(der).decode(encoding='utf-8')
     return convert

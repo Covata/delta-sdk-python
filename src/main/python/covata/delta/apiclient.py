@@ -19,7 +19,7 @@ import requests
 from . import signer, utils
 
 
-class ApiClient(utils.LogMixin):
+class ApiClient:
     """
     The Delta API Client is an abstraction over the Delta API for execution of
     requests and responses.
@@ -74,6 +74,7 @@ class ApiClient(utils.LogMixin):
 
         return identity_id
 
+    @utils.check_id("requestor_id, identity_id")
     def get_identity(self, requestor_id, identity_id):
         """
         Gets the identity matching the given identity id.
@@ -93,10 +94,15 @@ class ApiClient(utils.LogMixin):
         identity = response.json()
         return identity
 
+    @utils.check_id("requestor_id")
     @utils.check_arguments(
         "page, page_size",
-        lambda x: True if x is None else int(x) > 0,
+        lambda x: x is None or int(x) > 0,
         "must be a non-zero positive integer")
+    @utils.check_arguments(
+        "metadata",
+        lambda x: x is not None and dict(x),
+        "must be a non-empty dict[str, str]")
     def get_identities_by_metadata(self, requestor_id, metadata,
                                    page=None, page_size=None):
         """
@@ -125,6 +131,7 @@ class ApiClient(utils.LogMixin):
         response.raise_for_status()
         return response.json()
 
+    @utils.check_id("requestor_id")
     def create_secret(self, requestor_id, content, encryption_details):
         """
         Creates a new secret in Delta. The key used for encryption should
@@ -154,6 +161,7 @@ class ApiClient(utils.LogMixin):
         response.raise_for_status()
         return response.json()
 
+    @utils.check_id("requestor_id, base_secret_id, rsa_key_owner_id")
     def share_secret(self, requestor_id, content, encryption_details,
                      base_secret_id, rsa_key_owner_id):
         """
@@ -191,6 +199,7 @@ class ApiClient(utils.LogMixin):
         response.raise_for_status()
         return response.json()
 
+    @utils.check_id("requestor_id, secret_id")
     def delete_secret(self, requestor_id, secret_id):
         """
         Deletes the secret with the given secret id.
@@ -206,6 +215,7 @@ class ApiClient(utils.LogMixin):
             auth=self.signer(requestor_id))
         response.raise_for_status()
 
+    @utils.check_id("requestor_id, secret_id")
     def get_secret(self, requestor_id, secret_id):
         """
         Gets the given secret. This does not include the metadata and contents,
@@ -227,6 +237,7 @@ class ApiClient(utils.LogMixin):
         response.raise_for_status()
         return response.json()
 
+    @utils.check_id("requestor_id, secret_id")
     def get_secret_metadata(self, requestor_id, secret_id):
         """
         Gets the metadata key and value pairs for the given secret.
@@ -248,6 +259,7 @@ class ApiClient(utils.LogMixin):
         version = int(response.headers["ETag"])
         return metadata, version
 
+    @utils.check_id("requestor_id, secret_id")
     def get_secret_content(self, requestor_id, secret_id):
         """
         Gets the contents of the given secret.
@@ -267,6 +279,7 @@ class ApiClient(utils.LogMixin):
         response.raise_for_status()
         return response.json()
 
+    @utils.check_id("requestor_id, secret_id")
     def update_secret_metadata(self,
                                requestor_id,
                                secret_id,
@@ -297,6 +310,7 @@ class ApiClient(utils.LogMixin):
 
         response.raise_for_status()
 
+    @utils.check_id("requestor_id, identity_id")
     def update_identity_metadata(self,
                                  requestor_id,
                                  identity_id,
@@ -326,6 +340,7 @@ class ApiClient(utils.LogMixin):
             auth=self.signer(requestor_id))
         response.raise_for_status()
 
+    @utils.check_id("identity_id")
     def signer(self, identity_id):
         """
         Generates a request signer function for the

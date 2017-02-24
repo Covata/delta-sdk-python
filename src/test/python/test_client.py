@@ -16,7 +16,6 @@ import pytest
 import uuid
 
 from covata.delta import Client
-from covata.delta import ApiClient
 
 
 @pytest.fixture(scope="function")
@@ -26,8 +25,13 @@ def client(api_client, key_store):
 
 
 @pytest.fixture(scope="function")
-def api_client(key_store):
-    return ApiClient(key_store)
+def api_client(mocker):
+    return mocker.MagicMock()
+
+
+@pytest.fixture(scope="function")
+def key_store(mocker):
+    return mocker.MagicMock()
 
 
 @pytest.fixture(scope="function")
@@ -51,37 +55,102 @@ def mock_crypto(mocker):
     return {"iv": iv, "key": key}
 
 
+@pytest.mark.parametrize("ext_id", ["1", None])
+@pytest.mark.parametrize("metadata", [dict(name="Bob"), None, {}])
 def test_create_identity(mocker, client, api_client, key_store, private_key,
-                         key2bytes):
+                         key2bytes, ext_id, metadata):
     expected_id = str(uuid.uuid4())
 
     mocker.patch('covata.delta.crypto.generate_private_key',
                  return_value=private_key)
+    api_client.register_identity.return_value = expected_id
+    identity = client.create_identity(ext_id, metadata)
 
-    mocker.patch.object(api_client, "register_identity",
-                        return_value=expected_id)
+    api_client.register_identity.assert_called_with(
+        key2bytes(private_key.public_key()),
+        key2bytes(private_key.public_key()),
+        ext_id,
+        metadata)
 
-    identity = client.create_identity("1", {})
-
-    crypto_key = key_store.get_private_encryption_key(identity.id)
-    signing_key = key_store.get_private_signing_key(identity.id)
+    key_store.store_keys.assert_called_with(
+        identity_id=expected_id,
+        private_signing_key=private_key,
+        private_encryption_key=private_key)
 
     assert identity.id == expected_id
-    assert identity.external_id == "1"
-    assert identity.metadata == dict()
-    assert key2bytes(crypto_key) == key2bytes(private_key)
-    assert key2bytes(signing_key) == key2bytes(private_key)
+    assert identity.external_id == ext_id if ext_id is not None \
+        else identity.external_id is None
+    assert identity.metadata == metadata if metadata is not None \
+        else identity.metadata is None
 
 
-def test_get_identity_same_target(mocker, client, api_client):
+@pytest.mark.parametrize("ext_id", ["1", None])
+@pytest.mark.parametrize("metadata", [dict(name="Bob"), None])
+def test_get_identity_empty_ext_id_and_metadata(mocker, client, api_client,
+                                                ext_id, metadata):
     expected_id = str(uuid.uuid4())
+    response = dict(version=1,
+                    id=expected_id,
+                    cryptoPublicKey="crypto_public_key",
+                    externalId=ext_id,
+                    metadata=metadata)
+    response = dict((k, v) for k, v in response.items() if v is not None)
 
-    mocker.patch.object(api_client, "get_identity",
-                        return_value=dict(version=1,
-                                          id=expected_id,
-                                          externalId="1",
-                                          cryptoPublicKey="crypto_public_key",
-                                          metadata=dict(name="Bob")))
+    mocker.patch.object(api_client, "get_identity", return_value=response)
+
+    identity = client.get_identity(expected_id)
+    ext_id_ = identity.external_id
+    metadata_ = identity.metadata
+
+    assert identity.parent == client
+    assert identity.id == expected_id
+    assert ext_id_ == ext_id if ext_id else ext_id_ is None
+    assert metadata_ == metadata if metadata else metadata_ is None
+    assert identity.public_encryption_key == "crypto_public_key"
+
+
+@pytest.mark.parametrize("identities", [
+    [],
+    [dict(id="id1",
+          version=2,
+          cryptoPublicKey="key1",
+          externalId="ext1",
+          metadata=dict(x="x")),
+     dict(id="id2",
+          version=2,
+          cryptoPublicKey="key2",
+          metadata=dict(x="x", x2="x2"))
+     ]
+], ids=["empty list", "list of identities"])
+def test_get_identities_by_metadata(mocker, client, api_client, identities):
+    mocker.patch.object(api_client, "get_identities_by_metadata",
+                        return_value=identities)
+    auth_id = str(uuid.uuid4())
+    identities_ = list(client.get_identities_by_metadata(auth_id, dict(x="x")))
+
+    assert len(identities) == len(identities_)
+
+    for identity, identity_ in zip(identities, identities_):
+        ext_id_ = identity_.external_id
+        ext_id = identity.get("externalId")
+
+        assert identity_.parent == client
+        assert identity_.id == identity["id"]
+        assert identity_.public_encryption_key == identity["cryptoPublicKey"]
+        assert identity_.metadata == identity["metadata"]
+        assert ext_id_ == ext_id if ext_id is not None else ext_id_ is None
+
+
+@pytest.mark.parametrize("auth_id", [str(uuid.uuid4())])
+@pytest.mark.parametrize("identity_id", [None, str(uuid.uuid4())])
+def test_get_identity(client, api_client, auth_id, identity_id):
+    expected_id = auth_id if identity_id is None else identity_id
+    api_client.get_identity.return_value = dict(
+        version=1,
+        id=expected_id,
+        externalId="1",
+        cryptoPublicKey="crypto_public_key",
+        metadata=dict(name="Bob"))
 
     identity = client.get_identity(expected_id)
 
@@ -92,47 +161,22 @@ def test_get_identity_same_target(mocker, client, api_client):
     assert identity.public_encryption_key == "crypto_public_key"
 
 
-def test_get_identity_different_target(mocker, client, api_client):
-    auth_id = str(uuid.uuid4())
-    expected_id = str(uuid.uuid4())
-
-    mocker.patch.object(api_client, "get_identity",
-                        return_value=dict(version=1,
-                                          id=expected_id,
-                                          externalId="1",
-                                          cryptoPublicKey="crypto_public_key",
-                                          metadata=dict(name="Bob")))
-
-    identity = client.get_identity(auth_id, expected_id)
-
-    assert identity.parent == client
-    assert identity.id == expected_id
-    assert identity.external_id == "1"
-    assert identity.metadata == dict(name="Bob")
-    assert identity.public_encryption_key == "crypto_public_key"
-
-
-def test_create_secret(mocker, client, api_client, key_store, private_key,
-                       mock_crypto):
+def test_create_secret(client, api_client, key_store, private_key, mock_crypto):
     expected_id = str(uuid.uuid4())
     rsa_key_owner_id = str(uuid.uuid4())
     created_by_id = str(uuid.uuid4())
 
-    mocker.patch.object(key_store, "get_private_encryption_key",
-                        return_value=private_key)
+    key_store.get_private_encryption_key.return_value = private_key
 
-    mocker.patch.object(api_client, "create_secret",
-                        return_value=dict(id=expected_id))
-
-    mocker.patch.object(api_client, "get_secret",
-                        return_value=dict(
-                            id=expected_id,
-                            created="12345",
-                            rsaKeyOwner=rsa_key_owner_id,
-                            createdBy=created_by_id,
-                            encryptionDetails=dict(
-                                initialisationVector=mock_crypto["iv"],
-                                symmetricKey=mock_crypto["key"])))
+    api_client.create_secret.return_value = dict(id=expected_id)
+    api_client.get_secret.return_value = dict(
+        id=expected_id,
+        created="12345",
+        rsaKeyOwner=rsa_key_owner_id,
+        createdBy=created_by_id,
+        encryptionDetails=dict(
+            initialisationVector=mock_crypto["iv"],
+            symmetricKey=mock_crypto["key"]))
 
     secret = client.create_secret(created_by_id,
                                   "this is my secret".encode('utf-8'))
@@ -146,33 +190,29 @@ def test_create_secret(mocker, client, api_client, key_store, private_key,
     assert secret.encryption_details.symmetric_key == mock_crypto["key"]
 
 
-def test_create_secret_via_identity(mocker, client, api_client, key_store,
+def test_create_secret_via_identity(client, api_client, key_store,
                                     private_key, mock_crypto):
     expected_id = str(uuid.uuid4())
     created_by_id = str(uuid.uuid4())
 
-    mocker.patch.object(api_client, "get_identity",
-                        return_value=dict(version=1,
-                                          id=created_by_id,
-                                          externalId="1",
-                                          cryptoPublicKey="crypto_public_key",
-                                          metadata=dict(name="Bob")))
+    api_client.get_identity.return_value = dict(
+        version=1,
+        id=created_by_id,
+        externalId="1",
+        cryptoPublicKey="crypto_public_key",
+        metadata=dict(name="Bob"))
+    key_store.get_private_encryption_key.return_value = private_key
+    api_client.create_secret.return_value = dict(
+        id=expected_id, href="https://test.com/v1/secret")
 
-    mocker.patch.object(key_store, "get_private_encryption_key",
-                        return_value=private_key)
-
-    mocker.patch.object(api_client, "create_secret",
-                        return_value=dict(id=expected_id))
-
-    mocker.patch.object(api_client, "get_secret",
-                        return_value=dict(
-                            id=expected_id,
-                            created="12345",
-                            rsaKeyOwner=created_by_id,
-                            createdBy=created_by_id,
-                            encryptionDetails=dict(
-                                initialisationVector=mock_crypto["iv"],
-                                symmetricKey=mock_crypto["key"])))
+    api_client.get_secret.return_value = dict(
+        id=expected_id,
+        created="12345",
+        rsaKeyOwner=created_by_id,
+        createdBy=created_by_id,
+        encryptionDetails=dict(
+            initialisationVector=mock_crypto["iv"],
+            symmetricKey=mock_crypto["key"]))
 
     identity = client.get_identity(created_by_id)
 

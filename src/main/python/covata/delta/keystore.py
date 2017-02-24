@@ -24,13 +24,14 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 
-from .utils import LogMixin
+from . import utils
 
 
 @six.add_metaclass(ABCMeta)
 class DeltaKeyStore(object):
 
     @abstractmethod
+    @utils.check_id("identity_id")
     def store_keys(self,
                    identity_id,
                    private_signing_key,
@@ -46,6 +47,7 @@ class DeltaKeyStore(object):
         """
 
     @abstractmethod
+    @utils.check_id("identity_id")
     def get_private_signing_key(self, identity_id):
         """
         Loads a private signing key instance for the given identity id.
@@ -55,6 +57,7 @@ class DeltaKeyStore(object):
         """
 
     @abstractmethod
+    @utils.check_id("identity_id")
     def get_private_encryption_key(self, identity_id):
         """
         Loads a private encryption key instance for the given identity id.
@@ -64,11 +67,10 @@ class DeltaKeyStore(object):
         """
 
 
-class FileSystemKeyStore(DeltaKeyStore, LogMixin):
+class FileSystemKeyStore(DeltaKeyStore):
     def __init__(self,
                  key_store_path,
                  key_store_passphrase):
-        # type: (str, bytes) -> self
         """
         Constructs a new Filesystem-backed :class:`~.DeltaKeyStore` with
         the given configuration.
@@ -83,18 +85,20 @@ class FileSystemKeyStore(DeltaKeyStore, LogMixin):
                    identity_id,
                    private_signing_key,
                    private_encryption_key):
-        # type: (str, RSAPrivateKey, RSAPrivateKey) -> None
+        super(FileSystemKeyStore, self).store_keys(
+            identity_id, private_signing_key, private_encryption_key)
         self.__save(private_signing_key, "{}.signing.pem".format(identity_id))
         self.__save(private_encryption_key, "{}.crypto.pem".format(identity_id))
 
     def get_private_signing_key(self, identity_id):
+        super(FileSystemKeyStore, self).get_private_signing_key(identity_id)
         return self.__load("{}.signing.pem".format(identity_id))
 
     def get_private_encryption_key(self, identity_id):
+        super(FileSystemKeyStore, self).get_private_encryption_key(identity_id)
         return self.__load("{}.crypto.pem".format(identity_id))
 
     def __save(self, private_key, file_name):
-        # type: (RSAPrivateKey, str) -> None
         if not isinstance(private_key, RSAPrivateKey):
             raise TypeError("private_key must be an instance of RSAPrivateKey, "
                             "actual: {}".format(type(private_key).__name__))
@@ -106,24 +110,20 @@ class FileSystemKeyStore(DeltaKeyStore, LogMixin):
 
         file_path = os.path.join(self.key_store_path, file_name)
         if not os.path.isdir(self.key_store_path):
-            self.logger.debug("creating directory %s", self.key_store_path)
             os.makedirs(self.key_store_path)
 
         if os.path.isfile(file_path):
             msg = "Save failed: A key with name [{}] already exists".format(
                 file_name)
-            self.logger.error(msg)
             raise IOError(msg)
 
         with open(file_path, 'w') as f:
-            self.logger.debug("Saving %s", file_name)
             f.write(pem.decode(encoding='utf8'))
 
     def __load(self, file_name):
         # type: (str) -> RSAPrivateKey
         file_path = os.path.join(self.key_store_path, file_name)
         with(open(file_path, 'r')) as f:
-            self.logger.debug("Loading %s", file_name)
             return serialization.load_pem_private_key(
                 f.read().encode('utf-8'),
                 password=self.__key_store_passphrase,
