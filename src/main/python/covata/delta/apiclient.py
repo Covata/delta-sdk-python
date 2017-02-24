@@ -55,8 +55,8 @@ class ApiClient(utils.LogMixin):
         :param str public_signing_key:
             the public signing key to associate with the identity
         :param external_id: the external id to associate with the identity
-        :param metadata: the metadata to associate with the identity
         :type external_id: str | None
+        :param metadata: the metadata to associate with the identity
         :type metadata: dict[str, str] | None
         :return: the id of the newly created identity
         :rtype: str

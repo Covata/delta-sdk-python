@@ -55,8 +55,8 @@ class Client(utils.LogMixin):
         Creates a new identity in Delta.
 
         :param external_id: the external id to associate with the identity
-        :param metadata: the metadata to associate with the identity
         :type external_id: str | None
+        :param metadata: the metadata to associate with the identity
         :type metadata: dict[str, str] | None
         :return: the identity
         :rtype: :class:`~.Identity`
@@ -167,12 +167,12 @@ class Identity:
         and external id.
 
         :param parent: the Delta client that constructed this instance
+        :type parent: :class:`~.Client`
         :param id: the id of the identity
         :param str public_encryption_key: the public signing key of the identity
         :param external_id: the external id of the identity
-        :param metadata: the metadata belonging to the identity
-        :type parent: :class:`~.Client`
         :type external_id: str | None
+        :param metadata: the metadata belonging to the identity
         :type metadata: dict[str, str] | None
         """
         self.__parent = parent
@@ -229,13 +229,13 @@ class Secret:
         Creates a new secret with the given parameters.
 
         :param parent: the Delta client that constructed this instance
+        :type parent: :class:`~.Client`
         :param str id: the id of the secret
         :param str created: the created date
         :param str rsa_key_owner: the identity id of the RSA key owner
         :param str created_by: the identity id of the secret creator
         :param encryption_details: the encryption details of the secret
-        :type parent: :class:`~.Client`
-        :type encryption_details: :class:`~.'EncryptionDetails`
+        :type encryption_details: :class:`~.EncryptionDetails`
         """
         self.__parent = parent
         self.__id = id
