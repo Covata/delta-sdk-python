@@ -83,7 +83,7 @@ class Client:
         """
         Gets the identity matching the given identity id.
 
-        :param identity_id: the authenticating identity id
+        :param str identity_id: the authenticating identity id
         :type identity_to_retrieve: str | None
         :return: the identity
         :rtype: :class:`~.Identity`
@@ -97,6 +97,31 @@ class Client:
                         response["cryptoPublicKey"],
                         response["externalId"],
                         response["metadata"])
+
+    def get_identities_by_metadata(self, identity_id, metadata,
+                                   page=None, page_size=None):
+        """
+        Gets a list of identities matching the given metadata key and value
+        pairs, bound by the pagination parameters.
+
+        :param str identity_id: the authenticating identity id
+        :param metadata: the metadata key and value pairs to filter
+        :type metadata: dict[str, str]
+        :param page: the page number
+        :type page: int | None
+        :param page_size: the page size
+        :type page_size: int | None
+        :return: a list of :class:`~.Identity` objects satisfying the request
+        :rtype: list[:class:`~.Identity`]
+        """
+        identities = self.api_client.get_identities_by_metadata(
+            identity_id, metadata, page, page_size)
+        for identity in identities:
+            yield Identity(self,
+                           identity["id"],
+                           identity["cryptoPublicKey"],
+                           identity["externalId"],
+                           identity["metadata"])
 
     def create_secret(self, identity_id, content):
         """
@@ -174,7 +199,7 @@ class Identity:
         :param metadata: the metadata belonging to the identity
         :type metadata: dict[str, str] | None
         """
-        self.__parent = parent
+        self.__parent = parent  # type: Client
         self.__id = id
         self.__public_encryption_key = public_encryption_key
         self.__external_id = external_id
@@ -199,6 +224,33 @@ class Identity:
     @property
     def metadata(self):
         return self.__metadata
+
+    def get_identity(self, identity_to_retrieve=None):
+        """
+        Gets the identity matching the given identity id.
+
+        :type identity_to_retrieve: str | None
+        :return: the identity
+        :rtype: :class:`~.Identity`
+        """
+        return self.parent.get_identity(self.id, identity_to_retrieve)
+
+    def get_identities_by_metadata(self, metadata, page=None, page_size=None):
+        """
+        Gets a list of identities matching the given metadata key and value
+        pairs, bound by the pagination parameters.
+
+        :param metadata: the metadata key and value pairs to filter
+        :type metadata: dict[str, str]
+        :param page: the page number
+        :type page: int | None
+        :param page_size: the page size
+        :type page_size: int | None
+        :return: a list of :class:`~.Identity` objects satisfying the request
+        :rtype: list[:class:`~.Identity`]
+        """
+        return self.parent.get_identities_by_metadata(
+            self.id, metadata, page, page_size)
 
     def create_secret(self, content):
         """
