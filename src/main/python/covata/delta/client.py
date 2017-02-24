@@ -55,8 +55,8 @@ class Client(utils.LogMixin):
         Creates a new identity in Delta.
 
         :param external_id: the external id to associate with the identity
-        :param metadata: the metadata to associate with the identity
         :type external_id: str | None
+        :param metadata: the metadata to associate with the identity
         :type metadata: dict[str, str] | None
         :return: the identity
         :rtype: :class:`~.Identity`
@@ -89,15 +89,64 @@ class Client(utils.LogMixin):
         :return: the identity
         :rtype: :class:`~.Identity`
         """
-        response = self.api_client.get_identity(identity_id,
-                                                identity_id
-                                                if identity_to_retrieve is None
-                                                else identity_to_retrieve)
+        response = self.api_client.get_identity(
+            identity_id,
+            identity_to_retrieve if identity_to_retrieve else identity_id)
+
         return Identity(self,
-                        response.get("id"),
-                        response.get("cryptoPublicKey"),
-                        response.get("externalId"),
-                        response.get("metadata"))
+                        response["id"],
+                        response["cryptoPublicKey"],
+                        response["externalId"],
+                        response["metadata"])
+
+    def create_secret(self, identity_id, content):
+        """
+        Creates a new secret in Delta with the given byte contents.
+
+        :param str identity_id: the authenticating identity id
+        :param bytes content: the secret contents
+        :return: the secret
+        :rtype: :class:`~.Secret`
+        """
+        secret_key = crypto.generate_secret_key()
+        iv = crypto.generate_initialisation_vector()
+
+        public_key = self.key_store.get_private_encryption_key(
+            identity_id).public_key()
+
+        encrypted_key = crypto.encrypt_key_with_public_key(secret_key,
+                                                           public_key)
+        cipher_text, tag = crypto.encrypt(content, secret_key, iv)
+        response = self.api_client.create_secret(
+            requestor_id=id,
+            content=cipher_text + tag,
+            encryption_details=dict(
+                symmetricKey=encrypted_key,
+                initialisationVector=iv
+            ))
+
+        return self.get_secret(identity_id, response["id"])
+
+    def get_secret(self, identity_id, secret_id):
+        """
+        Gets the given secret by id.
+
+        :param str identity_id: the authenticating identity id
+        :param str secret_id: the id of the secret to retrieve
+        :return: the secret
+        :rtype: :class:`~.Secret`
+        """
+        response = self.api_client.get_secret(identity_id, secret_id)
+
+        return Secret(self,
+                      response["id"],
+                      response["created"],
+                      response["rsaKeyOwner"],
+                      response["createdBy"],
+                      EncryptionDetails(
+                          response["encryptionDetails"]["symmetricKey"],
+                          response["encryptionDetails"]["initialisationVector"]
+                      ))
 
 
 class Identity:
@@ -111,22 +160,23 @@ class Identity:
     and a reference to an identifier in an external system.
     """
 
-    def __init__(self, parent, identity_id, public_encryption_key,
+    def __init__(self, parent, id, public_encryption_key,
                  external_id, metadata):
         """
         Creates a new identity in Delta with the provided metadata
         and external id.
 
         :param parent: the Delta client that constructed this instance
+        :type parent: :class:`~.Client`
+        :param id: the id of the identity
         :param str public_encryption_key: the public signing key of the identity
         :param external_id: the external id of the identity
-        :param metadata: the metadata belonging to the identity
-        :type parent: :class:`~.Client`
         :type external_id: str | None
+        :param metadata: the metadata belonging to the identity
         :type metadata: dict[str, str] | None
         """
         self.__parent = parent
-        self.__identity_id = identity_id
+        self.__id = id
         self.__public_encryption_key = public_encryption_key
         self.__external_id = external_id
         self.__metadata = metadata
@@ -136,8 +186,8 @@ class Identity:
         return self.__parent
 
     @property
-    def identity_id(self):
-        return self.__identity_id
+    def id(self):
+        return self.__id
 
     @property
     def public_encryption_key(self):
@@ -150,3 +200,96 @@ class Identity:
     @property
     def metadata(self):
         return self.__metadata
+
+    def create_secret(self, content):
+        """
+        Creates a new secret in Delta with the given contents.
+
+        :param bytes content: the secret content
+        :return: the secret
+        :rtype: :class:`~.Secret`
+        """
+        return self.parent.create_secret(self.id, content)
+
+
+class Secret:
+    """
+    An instance of this class encapsulates a <i>secret</i> in Covata Delta. A
+    secret has contents, which is encrypted by a symmetric key algorithm as
+    defined in the immutable EncryptionDetails class, holding information such
+    as the symmetric (secret) key, initialisation vector and algorithm. The
+    symmetric key is encrypted with the public encryption key of the RSA key
+    owner. This class will return the decrypted contents and symmetric key if
+    returned as a result of Client.
+    """
+
+    def __init__(self, parent, id, created, rsa_key_owner, created_by,
+                 encryption_details):
+        """
+        Creates a new secret with the given parameters.
+
+        :param parent: the Delta client that constructed this instance
+        :type parent: :class:`~.Client`
+        :param str id: the id of the secret
+        :param str created: the created date
+        :param str rsa_key_owner: the identity id of the RSA key owner
+        :param str created_by: the identity id of the secret creator
+        :param encryption_details: the encryption details of the secret
+        :type encryption_details: :class:`~.EncryptionDetails`
+        """
+        self.__parent = parent
+        self.__id = id
+        self.__created = created
+        self.__rsa_key_owner = rsa_key_owner
+        self.__created_by = created_by
+        self.__encryption_details = encryption_details
+
+    @property
+    def parent(self):
+        return self.__parent
+
+    @property
+    def id(self):
+        return self.__id
+
+    @property
+    def created(self):
+        return self.__created
+
+    @property
+    def rsa_key_owner(self):
+        return self.__rsa_key_owner
+
+    @property
+    def created_by(self):
+        return self.__created_by
+
+    @property
+    def encryption_details(self):
+        return self.__encryption_details
+
+
+class EncryptionDetails:
+    """
+    This class holds the necessary key materials required to decrypt a
+    particular secret. The symmetric key itself is protected by a public
+    encryption key belonging to an identity.
+    """
+
+    def __init__(self, symmetric_key, initialisation_vector):
+        """
+        Creates a new encryption details with the given parameters.
+
+        :param str symmetric_key: the symmetric key
+        :param str initialisation_vector: the initialisation vector
+        """
+        self.__symmetric_key = symmetric_key
+        self.__initialisation_vector = initialisation_vector
+
+    @property
+    def symmetric_key(self):
+        return self.__symmetric_key
+
+    @property
+    def initialisation_vector(self):
+        return self.__initialisation_vector

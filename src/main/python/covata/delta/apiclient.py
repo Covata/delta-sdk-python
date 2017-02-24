@@ -54,8 +54,8 @@ class ApiClient(utils.LogMixin):
         :param str public_signing_key:
             the public signing key to associate with the identity
         :param external_id: the external id to associate with the identity
-        :param metadata: the metadata to associate with the identity
         :type external_id: str | None
+        :param metadata: the metadata to associate with the identity
         :type metadata: dict[str, str] | None
         :return: the id of the newly created identity
         :rtype: str
@@ -228,10 +228,7 @@ class ApiClient(utils.LogMixin):
                 secret_id=secret_id),
             auth=self.signer(requestor_id))
         response.raise_for_status()
-        secret = response.json()
-        for k, v in secret["encryptionDetails"].items():
-            secret["encryptionDetails"][k] = b64decode(v)
-        return secret
+        return response.json()
 
     def get_secret_metadata(self, requestor_id, secret_id):
         """
