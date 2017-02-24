@@ -96,7 +96,7 @@ class ApiClient:
 
     @utils.check_arguments(
         "page, page_size",
-        lambda x: True if x is None else int(x) > 0,
+        lambda x: x is None or int(x) > 0,
         "must be a non-zero positive integer")
     @utils.check_arguments(
         "metadata",
