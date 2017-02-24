@@ -24,10 +24,10 @@ def client(mocker):
 @pytest.fixture(scope="function")
 def identity_a(client):
     return Identity(parent=client,
-             id="id-a",
-             public_encryption_key="key-a",
-             external_id="ext-a",
-             metadata=dict(name="a"))
+                    id="id-a",
+                    public_encryption_key="key-a",
+                    external_id="ext-a",
+                    metadata=dict(name="a"))
 
 
 @pytest.fixture(scope="function")
