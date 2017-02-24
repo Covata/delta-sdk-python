@@ -95,8 +95,8 @@ class Client:
         return Identity(self,
                         response["id"],
                         response["cryptoPublicKey"],
-                        response["externalId"],
-                        response["metadata"])
+                        response.get("externalId"),
+                        response.get("metadata"))
 
     def get_identities_by_metadata(self, identity_id, metadata,
                                    page=None, page_size=None):
@@ -120,8 +120,8 @@ class Client:
             yield Identity(self,
                            identity["id"],
                            identity["cryptoPublicKey"],
-                           identity["externalId"],
-                           identity["metadata"])
+                           identity.get("externalId"),
+                           identity.get("metadata"))
 
     def create_secret(self, identity_id, content):
         """
@@ -262,6 +262,11 @@ class Identity:
         """
         return self.parent.create_secret(self.id, content)
 
+    def __repr__(self):
+        return "{cls}(id={id})" \
+            .format(cls=self.__class__.__name__,
+                    id=self.id)
+
 
 class Secret:
     """
@@ -318,6 +323,11 @@ class Secret:
     @property
     def encryption_details(self):
         return self.__encryption_details
+
+    def __repr__(self):
+        return "{cls}(id={id})" \
+            .format(cls=self.__class__.__name__,
+                    id=self.id)
 
 
 class EncryptionDetails:

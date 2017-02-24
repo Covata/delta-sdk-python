@@ -22,9 +22,16 @@ def fs_key_store(temp_directory):
     return FileSystemKeyStore(temp_directory, b"passphrase")
 
 
-def test_decrypt_private_key(fs_key_store, private_key, key2bytes):
+def test_decrypt_private_signing_key(fs_key_store, private_key, key2bytes):
     fs_key_store.store_keys("mock", private_key, private_key)
     retrieved = key2bytes(fs_key_store.get_private_signing_key("mock"))
+    expected = key2bytes(private_key)
+    assert retrieved == expected
+
+
+def test_decrypt_private_encryption_key(fs_key_store, private_key, key2bytes):
+    fs_key_store.store_keys("mock", private_key, private_key)
+    retrieved = key2bytes(fs_key_store.get_private_encryption_key("mock"))
     expected = key2bytes(private_key)
     assert retrieved == expected
 
@@ -71,7 +78,7 @@ def test_get_signing_key__should__fail_when_id_is_invalid(
 
 
 @pytest.mark.parametrize("id", ["", None])
-def test_get_signing_key__should__fail_when_id_is_invalid(
+def test_get_encryption_key__should__fail_when_id_is_invalid(
         fs_key_store, id):
     with pytest.raises(ValueError) as excinfo:
         fs_key_store.get_private_encryption_key(id)
