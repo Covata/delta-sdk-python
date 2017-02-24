@@ -141,9 +141,10 @@ def test_get_identities_by_metadata(mocker, client, api_client, identities):
         assert ext_id_ == ext_id if ext_id is not None else ext_id_ is None
 
 
-def test_get_identity_same_target(client, api_client):
-    expected_id = str(uuid.uuid4())
-
+@pytest.mark.parametrize("auth_id", [str(uuid.uuid4())])
+@pytest.mark.parametrize("identity_id", [None, str(uuid.uuid4())])
+def test_get_identity_same_target(client, api_client, auth_id, identity_id):
+    expected_id = auth_id if identity_id is None else identity_id
     api_client.get_identity.return_value = dict(
         version=1,
         id=expected_id,
@@ -152,26 +153,6 @@ def test_get_identity_same_target(client, api_client):
         metadata=dict(name="Bob"))
 
     identity = client.get_identity(expected_id)
-
-    assert identity.parent == client
-    assert identity.id == expected_id
-    assert identity.external_id == "1"
-    assert identity.metadata == dict(name="Bob")
-    assert identity.public_encryption_key == "crypto_public_key"
-
-
-def test_get_identity_different_target(client, api_client):
-    auth_id = str(uuid.uuid4())
-    expected_id = str(uuid.uuid4())
-
-    api_client.get_identity.return_value = dict(
-        version=1,
-        id=expected_id,
-        externalId="1",
-        cryptoPublicKey="crypto_public_key",
-        metadata=dict(name="Bob"))
-
-    identity = client.get_identity(auth_id, expected_id)
 
     assert identity.parent == client
     assert identity.id == expected_id
