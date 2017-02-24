@@ -143,7 +143,7 @@ def test_get_identities_by_metadata(mocker, client, api_client, identities):
 
 @pytest.mark.parametrize("auth_id", [str(uuid.uuid4())])
 @pytest.mark.parametrize("identity_id", [None, str(uuid.uuid4())])
-def test_get_identity_same_target(client, api_client, auth_id, identity_id):
+def test_get_identity(client, api_client, auth_id, identity_id):
     expected_id = auth_id if identity_id is None else identity_id
     api_client.get_identity.return_value = dict(
         version=1,
