@@ -81,7 +81,7 @@ class ApiClient:
         :param str requestor_id: the authenticating identity id
         :param str identity_id: the identity id to retrieve
         :return: the retrieved identity
-        :rtype: dict[str, str]
+        :rtype: dict[str, any]
         """
         response = requests.get(
             url="{base_url}{resource}/{identity_id}".format(
@@ -116,7 +116,7 @@ class ApiClient:
         :param page_size: the page size
         :type page_size: int | None
         :return: a list of identities satisfying the request
-        :rtype: list[dict[str, str]]
+        :rtype: list[dict[str, any]]
         """
         metadata_ = dict(("metadata." + k, v) for k, v in metadata.items())
         response = requests.get(
@@ -225,7 +225,7 @@ class ApiClient:
         :param str requestor_id: the authenticating identity id
         :param str secret_id: the secret id to be retrieved
         :return: the retrieved secret
-        :rtype: dict[str, str]
+        :rtype: dict[str, any]
         """
         response = requests.get(
             url="{base_url}{resource}/{secret_id}".format(
