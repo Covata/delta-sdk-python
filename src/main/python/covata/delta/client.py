@@ -352,7 +352,7 @@ class Identity:
 
 class Secret:
     """
-    An instance of this class encapsulates a <i>secret</i> in Covata Delta. A
+    An instance of this class encapsulates a secret in Covata Delta. A
     secret has contents, which is encrypted by a symmetric key algorithm as
     defined in the immutable EncryptionDetails class, holding information such
     as the symmetric (secret) key, initialisation vector and algorithm. The
