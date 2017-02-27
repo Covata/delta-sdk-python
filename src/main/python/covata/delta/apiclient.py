@@ -29,6 +29,7 @@ class ApiClient:
     DELTA_URL = 'https://delta.covata.io/v1'        # type: str
     RESOURCE_IDENTITIES = '/identities'             # type: str
     RESOURCE_SECRETS = '/secrets'                   # type: str
+    RESOURCE_EVENTS = '/events'                     # type: str
 
     def __init__(self, key_store):
         """
@@ -342,6 +343,39 @@ class ApiClient:
             json=dict(metadata=metadata),
             auth=self.signer(requestor_id))
         response.raise_for_status()
+
+    @utils.check_id("requestor_id")
+    @utils.check_arguments(
+        "secret_id, rsa_key_owner_id",
+        lambda x: x is None or str(x) is not "",
+        "must be a nonempty string")
+    def get_events(self, requestor_id, secret_id=None, rsa_key_owner_id=None):
+        """
+        Gets a list of events associated filtered by secret id or RSA key owner
+        or both secret id and RSA key owner
+
+        :param str requestor_id: the authenticating identity id
+        :param secret_id: the secret id of interest
+        :type secret_id: str | None
+        :param rsa_key_owner_id: the rsa key owner id of interest
+        :type rsa_key_owner_id: str | None
+        :return: a list of audit events
+        :rtype: list[dict[str, any]]
+        """
+        params = dict(purpose="AUDIT")
+        if secret_id is not None:
+            params["secretId"] = str(secret_id)
+        if rsa_key_owner_id is not None:
+            params["rsaKeyOwner"] = str(rsa_key_owner_id)
+
+        response = requests.get(
+            url="{base_url}{resource}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_EVENTS),
+            params=params,
+            auth=self.signer(requestor_id))
+        response.raise_for_status()
+        return response.json()
 
     @utils.check_id("identity_id")
     def signer(self, identity_id):
