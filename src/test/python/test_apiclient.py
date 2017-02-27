@@ -14,7 +14,6 @@
 
 import json
 import uuid
-from base64 import b64decode, b64encode
 
 import pytest
 import requests
@@ -105,9 +104,9 @@ def test_create_secret(api_client, mock_signer):
                   status=201,
                   json=expected_json)
 
-    content = b"123"
-    key = b"1234"
-    iv = b"1312"
+    content = "123"
+    key = "1234"
+    iv = "1312"
     response = api_client.create_secret(
         requestor_id="requestor_id",
         content=content,
@@ -123,9 +122,9 @@ def test_create_secret(api_client, mock_signer):
     request_json = json.loads(responses.calls[0].request.body.decode("utf-8"))
     encryption_details = request_json["encryptionDetails"]
 
-    assert b64decode(request_json["content"]) == content
-    assert b64decode(encryption_details["symmetricKey"]) == key
-    assert b64decode(encryption_details["initialisationVector"]) == iv
+    assert request_json["content"] == content
+    assert encryption_details["symmetricKey"] == key
+    assert encryption_details["initialisationVector"] == iv
 
 
 @responses.activate
@@ -140,9 +139,9 @@ def test_share_secret(api_client, mock_signer):
                   status=201,
                   json=expected_json)
 
-    content = b"123"
-    key = b"1234"
-    iv = b"1312"
+    content = "123"
+    key = "1234"
+    iv = "1312"
     rsa_key_owner_id = "rsa_key_owner_id"
     base_secret_id = "base"
     response = api_client.share_secret(
@@ -164,9 +163,9 @@ def test_share_secret(api_client, mock_signer):
 
     assert request_json["rsaKeyOwner"] == rsa_key_owner_id
     assert request_json["baseSecret"] == base_secret_id
-    assert b64decode(request_json["content"]) == content
-    assert b64decode(encryption_details["symmetricKey"]) == key
-    assert b64decode(encryption_details["initialisationVector"]) == iv
+    assert request_json["content"] == content
+    assert encryption_details["symmetricKey"] == key
+    assert encryption_details["initialisationVector"] == iv
 
 
 @responses.activate
@@ -221,8 +220,8 @@ def test_update_identity_metadata(api_client, mock_signer):
 def test_get_secret(api_client, mock_signer):
     requestor_id = "requestor_id"
     secret_id = "secret_id"
-    key = b"12331"
-    iv = b"1242"
+    key = "12331"
+    iv = "1242"
 
     response_json = dict(
         id=secret_id,
@@ -231,8 +230,8 @@ def test_get_secret(api_client, mock_signer):
         href="https://delta.covata.io/v1/secrets/" + secret_id,
         rsaKeyOwner=requestor_id,
         encryptionDetails=dict(
-            symmetricKey=b64encode(key).decode("utf-8"),
-            initialisationVector=b64encode(iv).decode("utf-8")
+            symmetricKey=key,
+            initialisationVector=iv
         ))
 
     responses.add(responses.GET,
@@ -303,7 +302,7 @@ def test_get_secret_metadata(api_client, mock_signer):
 def test_get_secret_content(api_client, mock_signer):
     requestor_id = "requestor_id"
     secret_id = "secret_id"
-    expected_content = b"123456"
+    expected_content = "123456"
 
     responses.add(
         responses.GET,
@@ -311,7 +310,7 @@ def test_get_secret_content(api_client, mock_signer):
             base_path=ApiClient.DELTA_URL,
             resource=ApiClient.RESOURCE_SECRETS,
             secret_id=secret_id),
-        json=b64encode(expected_content).decode("utf-8"))
+        expected_content)
 
     retrieved_content = api_client.get_secret_content(requestor_id, secret_id)
     mock_signer.assert_called_once_with(requestor_id)

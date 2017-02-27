@@ -116,7 +116,7 @@ def encrypt(data, secret_key, initialisation_vector):
     :param bytes data: the plaintext bytes to be encrypted
     :param bytes secret_key: the key to be used for encryption
     :param bytes initialisation_vector: the initialisation vector
-    :return: the ciphertext and GCM authentication tag tuple
+    :return: the cipher text and GCM authentication tag tuple
     :rtype: (bytes, bytes)
     """
     cipher = Cipher(algorithm=algorithms.AES(secret_key),

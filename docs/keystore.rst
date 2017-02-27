@@ -13,8 +13,8 @@
    limitations under the License.
 
 
-KeyStore
-========
+Key Store
+=========
 
 The ``DeltaKeyStore`` provides the interface for a key-storage
 backend of choice.

@@ -11,6 +11,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+from base64 import b64encode
 
 import pytest
 import uuid
@@ -35,7 +36,7 @@ def key_store(mocker):
 
 
 @pytest.fixture(scope="function")
-def mock_crypto(mocker):
+def mock_crypto(mocker, private_key):
     iv = "01234567".encode('utf-8')
     key = "0123456789abcdef".encode('utf-8')
 
@@ -44,6 +45,18 @@ def mock_crypto(mocker):
 
     mocker.patch('covata.delta.crypto.generate_initialisation_vector',
                  return_value=iv)
+
+    mocker.patch('covata.delta.crypto.generate_private_key',
+                 return_value=private_key)
+
+    mocker.patch('covata.delta.crypto.deserialize_public_key',
+                 return_value=private_key.public_key())
+
+    mocker.patch('covata.delta.crypto.decrypt',
+                 return_value=b'plaintext')
+
+    mocker.patch('covata.delta.crypto.decrypt_with_private_key',
+                 return_value=b'secret key')
 
     mocker.patch('covata.delta.crypto.encrypt',
                  return_value=('encrypted secret'.encode('utf-8'),
@@ -58,11 +71,9 @@ def mock_crypto(mocker):
 @pytest.mark.parametrize("ext_id", ["1", None])
 @pytest.mark.parametrize("metadata", [dict(name="Bob"), None, {}])
 def test_create_identity(mocker, client, api_client, key_store, private_key,
-                         key2bytes, ext_id, metadata):
+                         key2bytes, ext_id, metadata, mock_crypto):
     expected_id = str(uuid.uuid4())
 
-    mocker.patch('covata.delta.crypto.generate_private_key',
-                 return_value=private_key)
     api_client.register_identity.return_value = expected_id
     identity = client.create_identity(ext_id, metadata)
 
@@ -225,3 +236,40 @@ def test_create_secret_via_identity(client, api_client, key_store,
     assert secret.created_by == created_by_id
     assert secret.encryption_details.initialisation_vector == mock_crypto["iv"]
     assert secret.encryption_details.symmetric_key == mock_crypto["key"]
+
+
+def test_share_secret(client, api_client, key_store, private_key, mock_crypto):
+    secret_id = str(uuid.uuid4())
+    shared_secret_id = str(uuid.uuid4())
+    recipient_id = str(uuid.uuid4())
+    created_by_id = str(uuid.uuid4())
+
+    api_client.get_identity.return_value = dict(
+        id=recipient_id, cryptoPublicKey="crypto_public_key")
+
+    api_client.share_secret.return_value = dict(id=shared_secret_id)
+
+    api_client.get_secret.return_value = dict(
+        id=shared_secret_id,
+        created="67890",
+        rsaKeyOwner=recipient_id,
+        createdBy=created_by_id,
+        encryptionDetails=dict(
+            initialisationVector=mock_crypto["iv"],
+            symmetricKey=mock_crypto["key"]),
+        baseSecretId=secret_id)
+
+    api_client.get_secret_content.return_value = b64encode(b"my secret")
+
+    key_store.get_private_encryption_key.return_value = private_key
+
+    secret = client.share_secret(created_by_id, recipient_id, secret_id)
+
+    assert secret.parent == client
+    assert secret.id == shared_secret_id
+    assert secret.created == "67890"
+    assert secret.rsa_key_owner == recipient_id
+    assert secret.created_by == created_by_id
+    assert secret.encryption_details.initialisation_vector == mock_crypto["iv"]
+    assert secret.encryption_details.symmetric_key == mock_crypto["key"]
+    assert secret.base_secret_id == secret_id

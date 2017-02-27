@@ -34,6 +34,8 @@ across networks, and organisations.
     quick_start
     client
     identity
+    secret
+    encryption_details
     api
     crypto
     keystore

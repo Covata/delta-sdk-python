@@ -13,7 +13,6 @@
 #   limitations under the License.
 
 from __future__ import absolute_import
-from base64 import b64encode, b64decode
 
 import requests
 
@@ -60,7 +59,6 @@ class ApiClient:
         :return: the id of the newly created identity
         :rtype: str
         """
-
         body = dict(
             signingPublicKey=public_signing_key,
             cryptoPublicKey=public_encryption_key,
@@ -138,25 +136,24 @@ class ApiClient:
         Creates a new secret in Delta. The key used for encryption should
         be encrypted with the key of the authenticating identity.
 
+        It is the responsibility of the caller to ensure that the contents
+        and key material in the encryption details are properly represented
+        in a suitable string encoding (such as base64).
+
         :param str requestor_id: the authenticating identity id
-        :param bytes content: the contents of the secret
+        :param str content: the contents of the secret
         :param encryption_details: the encryption details
-        :type encryption_details: dict[str, bytes]
+        :type encryption_details: dict[str, str]
         :return: the created base secret
         :rtype: dict[str, str]
         """
-        content_b64 = b64encode(content).decode('utf-8')
-        encryption_details_b64 = dict(
-            (k, b64encode(v).decode('utf-8'))
-            for k, v in encryption_details.items())
-
         response = requests.post(
             url="{base_url}{resource}".format(
                 base_url=self.DELTA_URL,
                 resource=self.RESOURCE_SECRETS),
             json=dict(
-                content=content_b64,
-                encryptionDetails=encryption_details_b64
+                content=content,
+                encryptionDetails=encryption_details
             ),
             auth=self.signer(requestor_id))
 
@@ -173,27 +170,26 @@ class ApiClient:
         be provided. This call will result in a new derived secret being created
         and returned as a response.
 
+        It is the responsibility of the caller to ensure that the contents
+        and key material in the encryption details are properly represented
+        in a suitable string encoding (such as base64).
+
         :param str requestor_id: the authenticating identity id
-        :param bytes content: the contents of the secret
+        :param str content: the contents of the secret
         :param encryption_details: the encryption details
-        :type encryption_details: dict[str, bytes]
+        :type encryption_details: dict[str, str]
         :param str base_secret_id: the id of the base secret
         :param str rsa_key_owner_id: the id of the rsa key owner
         :return: the created derived secret
         :rtype: dict[str, str]
         """
-        content_b64 = b64encode(content).decode('utf-8')
-        encryption_details_b64 = dict(
-            (k, b64encode(v).decode('utf-8'))
-            for k, v in encryption_details.items())
-
         response = requests.post(
             url="{base_url}{resource}".format(
                 base_url=self.DELTA_URL,
                 resource=self.RESOURCE_SECRETS),
             json=dict(
-                content=content_b64,
-                encryptionDetails=encryption_details_b64,
+                content=content,
+                encryptionDetails=encryption_details,
                 baseSecret=base_secret_id,
                 rsaKeyOwner=rsa_key_owner_id
             ),
@@ -270,7 +266,7 @@ class ApiClient:
         :param str requestor_id: the authenticating identity id
         :param str secret_id: the secret id to be retrieved
         :return: the retrieved secret
-        :rtype: bytes
+        :rtype: str
         """
         response = requests.get(
             url="{base_url}{resource}/{secret_id}/content".format(
@@ -280,7 +276,7 @@ class ApiClient:
             auth=self.signer(requestor_id))
 
         response.raise_for_status()
-        return b64decode(response.json())
+        return response.text
 
     @utils.check_id("requestor_id, secret_id")
     def update_secret_metadata(self,
@@ -292,6 +288,7 @@ class ApiClient:
         Updates the metadata of the given secret given the version number.
         The version of a secret's metadata can be obtained by calling
         :func:`~.ApiClient.get_secret`.
+
         A newly created base secret has a metadata version of 1.
 
         :param str requestor_id: the authenticating identity id
@@ -323,6 +320,7 @@ class ApiClient:
         Updates the metadata of the given identity given the version number.
         The version of an identity's metadata can be obtained by calling
         :func:`~.ApiClient.get_identity`.
+
         An identity has an initial metadata version of 1.
 
         :param str requestor_id: the authenticating identity id

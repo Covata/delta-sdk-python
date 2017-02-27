@@ -14,6 +14,8 @@
 
 from __future__ import absolute_import
 
+from base64 import b64encode, b64decode
+
 from . import crypto
 
 
@@ -142,11 +144,11 @@ class Client:
                                                            public_key)
         cipher_text, tag = crypto.encrypt(content, secret_key, iv)
         response = self.api_client.create_secret(
-            requestor_id=id,
-            content=cipher_text + tag,
+            requestor_id=identity_id,
+            content=b64encode(cipher_text + tag).decode('utf-8'),
             encryption_details=dict(
-                symmetricKey=encrypted_key,
-                initialisationVector=iv
+                symmetricKey=b64encode(encrypted_key).decode('utf-8'),
+                initialisationVector=b64encode(iv).decode('utf-8')
             ))
 
         return self.get_secret(identity_id, response["id"])
@@ -170,7 +172,87 @@ class Client:
                       EncryptionDetails(
                           response["encryptionDetails"]["symmetricKey"],
                           response["encryptionDetails"]["initialisationVector"]
-                      ))
+                      ),
+                      response.get("baseSecretId"))
+
+    def get_secret_content_encrypted(self, identity_id, secret_id):
+        """
+        Gets the base64 encoded encrypted content given the secret id.
+
+        Note that the returned encrypted content when decoded from base64 has a
+        trailing 16 byte GCM authentication tag appended (i.e. the cipher text
+        is the byte range [:-16] and the authentication tag is the remaining
+        [-16:] bytes).
+
+        :param str identity_id: the authenticating identity id
+        :param str secret_id: the secret id
+        :return: the encrypted content encoded in base64
+        :rtype: str
+        """
+        return self.api_client.get_secret_content(identity_id, secret_id)
+
+    def get_secret_content(self, identity_id, secret_id, symmetric_key,
+                           initialisation_vector):
+        """
+        Gets the plaintext content, given the symmetric key and
+        initialisation vector used for encryption.
+
+        :param str identity_id: the authenticating identity id
+        :param str secret_id: the secret id
+        :param str symmetric_key:
+            the symmetric key used for encryption encoded in base64
+        :param str initialisation_vector:
+            the initialisation vector encoded in base64
+        :return: the plaintext content of the secret
+        :rtype: bytes
+        """
+        encrypted_content = b64decode(
+            self.get_secret_content_encrypted(identity_id, secret_id))
+
+        decrypted_key = crypto.decrypt_with_private_key(
+            b64decode(symmetric_key),
+            self.key_store.get_private_encryption_key(identity_id))
+
+        return crypto.decrypt(encrypted_content[:-16],
+                              encrypted_content[-16:],
+                              decrypted_key,
+                              b64decode(initialisation_vector))
+
+    def share_secret(self, identity_id, recipient_id, secret_id):
+        """
+        Shares the base secret with the specified recipient. The contents will
+        be encrypted with the public encryption key of the RSA key owner, and a
+        new secret key and initialisation vector will be generated. This call
+        will result in a new derived secret being created and returned.
+
+        :param str identity_id: the authenticating identity id
+        :param str recipient_id: the target identity id to share the base secret
+        :param str secret_id: the base secret id
+        :return: the derived secret
+        :rtype: :class:`~.Secret`
+        """
+        recipient = self.get_identity(identity_id, recipient_id)
+        secret = self.get_secret(identity_id, secret_id)
+
+        secret_key = crypto.generate_secret_key()
+        iv = crypto.generate_initialisation_vector()
+
+        public_key = crypto.deserialize_public_key(
+            recipient.public_encryption_key)
+
+        encrypted_key = crypto.encrypt_key_with_public_key(secret_key,
+                                                           public_key)
+        cipher_text, tag = crypto.encrypt(secret.get_content(), secret_key, iv)
+        response = self.api_client.share_secret(
+            requestor_id=identity_id,
+            content=b64encode(cipher_text + tag).decode('utf-8'),
+            encryption_details=dict(
+                symmetricKey=b64encode(encrypted_key).decode('utf-8'),
+                initialisationVector=b64encode(iv).decode('utf-8')),
+            base_secret_id=secret.id,
+            rsa_key_owner_id=recipient.id)
+
+        return self.get_secret(recipient.id, response["id"])
 
 
 class Identity:
@@ -270,7 +352,7 @@ class Identity:
 
 class Secret:
     """
-    An instance of this class encapsulates a <i>secret</i> in Covata Delta. A
+    An instance of this class encapsulates a secret in Covata Delta. A
     secret has contents, which is encrypted by a symmetric key algorithm as
     defined in the immutable EncryptionDetails class, holding information such
     as the symmetric (secret) key, initialisation vector and algorithm. The
@@ -280,7 +362,7 @@ class Secret:
     """
 
     def __init__(self, parent, id, created, rsa_key_owner, created_by,
-                 encryption_details):
+                 encryption_details, base_secret_id=None):
         """
         Creates a new secret with the given parameters.
 
@@ -299,6 +381,7 @@ class Secret:
         self.__rsa_key_owner = rsa_key_owner
         self.__created_by = created_by
         self.__encryption_details = encryption_details
+        self.__base_secret_id = base_secret_id
 
     @property
     def parent(self):
@@ -323,6 +406,42 @@ class Secret:
     @property
     def encryption_details(self):
         return self.__encryption_details
+
+    @property
+    def base_secret_id(self):
+        return self.__base_secret_id
+
+    def get_content(self):
+        """
+        Gets the content of a secret, encrypted with the details defined in the
+        encryption_details of this secret and encoded in base64.
+
+        :return: the content of the secret encoded in base64
+        :rtype: str
+        """
+        return self.parent.get_secret_content(
+            self.rsa_key_owner,
+            self.id,
+            self.encryption_details.symmetric_key,
+            self.encryption_details.initialisation_vector)
+
+    def share_with(self, identity_id):
+        """
+        Shares this secret with the target recipient identity. This action
+        will create a new (derived) secret in Covata Delta, and the new
+        secret will be returned to the caller.
+
+        The credentials of the RSA key owner must be present in the local
+        key store.
+
+        :param str identity_id: the recipient identity id
+        :return: the derived secret
+        :rtype: :class:`~.Secret`
+        """
+        return self.parent.share_secret(
+            self.created_by,
+            identity_id,
+            self.id)
 
     def __repr__(self):
         return "{cls}(id={id})" \
