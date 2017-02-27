@@ -52,9 +52,9 @@ def test_compute_sha256_hex_digest():
            b"9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
 
 
-def test_generate_initialization_vector(mocker):
+def test_generate_initialisation_vector(mocker):
     os_urandom = mocker.patch('os.urandom')
-    crypto.generate_initialization_vector()
+    crypto.generate_initialisation_vector()
     os_urandom.assert_called_once_with(16)
 
 

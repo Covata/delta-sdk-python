@@ -14,9 +14,9 @@
 
 from __future__ import absolute_import
 
+from .client import Client, Identity
 from .apiclient import ApiClient
-from .keystore import DeltaKeyStore
-from .keystore import FileSystemKeyStore
-from .utils import LogMixin
+from .keystore import DeltaKeyStore, FileSystemKeyStore
 
-__all__ = ["ApiClient", "FileSystemKeyStore", "LogMixin", "DeltaKeyStore"]
+__all__ = ["Client", "Identity", "ApiClient", "FileSystemKeyStore",
+           "DeltaKeyStore"]

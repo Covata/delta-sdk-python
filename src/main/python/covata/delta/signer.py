@@ -25,7 +25,7 @@ import six.moves.urllib as urllib
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
-from covata.delta.crypto import calculate_sha256hex
+from . import crypto
 
 __all__ = ["get_updated_headers"]
 
@@ -57,7 +57,8 @@ class SignatureMaterial(namedtuple('SignatureMaterial', [
         self.__string_to_sign = "\n".join([
             SIGNING_ALGORITHM,
             self.cvt_date,
-            calculate_sha256hex(self.__canonical_request).decode('utf-8')])
+            crypto. calculate_sha256hex(self.__canonical_request).decode(
+                'utf-8')])
 
     @property
     def canonical_request(self):
@@ -146,7 +147,7 @@ def __get_hashed_payload(payload):
         json.loads(payload.decode('utf-8')),
         separators=(',', ':'),
         sort_keys=True)
-    return calculate_sha256hex(sorted_payload).decode('utf-8')
+    return crypto.calculate_sha256hex(sorted_payload).decode('utf-8')
 
 
 def __encode_uri(resource_path):

@@ -18,15 +18,13 @@ import os
 from binascii import hexlify
 
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 __all__ = ["generate_private_key", "serialize_public_key",
            "calculate_sha256hex", "generate_secret_key",
-           "generate_initialization_vector", "encrypt", "decrypt",
+           "generate_initialisation_vector", "encrypt", "decrypt",
            "encrypt_key_with_public_key", "decrypt_with_private_key",
            "deserialize_public_key"]
 
@@ -35,13 +33,6 @@ def generate_private_key():
     """
     Generates a :class:`~rsa.RSAPrivateKey` object. The public key object can be
     extracted by calling public_key() method on the generated key object.
-
-    >>> private_key = generate_private_key() # generate a private key
-    >>> public_key = private_key.public_key() # get associated public key
-    >>> isinstance(private_key, rsa.RSAPrivateKey)
-    True
-    >>> isinstance(public_key, rsa.RSAPublicKey)
-    True
 
     :return: the generated private key object
     :rtype: :class:`~rsa.RSAPrivateKey`
@@ -94,13 +85,13 @@ def calculate_sha256hex(payload):
     return hexlify(x)
 
 
-def generate_initialization_vector():
+def generate_initialisation_vector():
     """
-    Generates a 128 bits initialization vector.
+    Generates a 128 bits initialisation vector.
 
     Uses ``/dev/urandom`` on UNIX platforms, and ``CryptGenRandom`` on Windows.
 
-    :return: the 128 bits initialization vector
+    :return: the 128 bits initialisation vector
     :rtype: bytes
     """
     return os.urandom(16)
@@ -118,24 +109,18 @@ def generate_secret_key():
     return os.urandom(32)
 
 
-def encrypt(data, secret_key, initialization_vector):
+def encrypt(data, secret_key, initialisation_vector):
     """
-    Encrypts data using the given secret key and initialization vector.
-
-    >>> secret_key = generate_secret_key()
-    >>> iv = generate_initialization_vector()
-    >>> ciphertext, tag = encrypt(b'secret message', secret_key, iv)
-    >>> decrypt(ciphertext, tag, secret_key, iv)
-    b'secret message'
+    Encrypts data using the given secret key and initialisation vector.
 
     :param bytes data: the plaintext bytes to be encrypted
     :param bytes secret_key: the key to be used for encryption
-    :param bytes initialization_vector: the initialisation vector
+    :param bytes initialisation_vector: the initialisation vector
     :return: the ciphertext and GCM authentication tag tuple
     :rtype: (bytes, bytes)
     """
     cipher = Cipher(algorithm=algorithms.AES(secret_key),
-                    mode=modes.GCM(initialization_vector=initialization_vector,
+                    mode=modes.GCM(initialization_vector=initialisation_vector,
                                    min_tag_length=16),
                     backend=default_backend())
     encryptor = cipher.encryptor()
@@ -144,20 +129,20 @@ def encrypt(data, secret_key, initialization_vector):
     return ciphertext, encryptor.tag
 
 
-def decrypt(ciphertext, tag, secret_key, initialization_vector):
+def decrypt(ciphertext, tag, secret_key, initialisation_vector):
     """
     Decrypts a cipher text using the given GCM authentication tag,
-    secret key and initialization vector.
+    secret key and initialisation vector.
 
     :param bytes ciphertext: the cipher text to be decrypted
     :param bytes tag: the GCM authentication tag
     :param bytes secret_key: the key to be used for encryption
-    :param bytes initialization_vector: the initialisation vector
+    :param bytes initialisation_vector: the initialisation vector
     :return: the decrypted plaintext
     :rtype: bytes
     """
     cipher = Cipher(algorithm=algorithms.AES(secret_key),
-                    mode=modes.GCM(initialization_vector=initialization_vector,
+                    mode=modes.GCM(initialization_vector=initialisation_vector,
                                    tag=tag),
                     backend=default_backend())
     decryptor = cipher.decryptor()
@@ -167,20 +152,6 @@ def decrypt(ciphertext, tag, secret_key, initialization_vector):
 def encrypt_key_with_public_key(secret_key, public_encryption_key):
     """
     Encrypts the given secret key with the public key.
-
-    >>> private_encryption_key = generate_private_key()
-    >>> public_encryption_key = private_encryption_key.public_key()
-    >>> secret_key = generate_secret_key()
-    >>>
-    >>> # encrypt key with public key
-    >>> encrypted_secret_key = encrypt_key_with_public_key(
-    ...     secret_key, public_encryption_key)
-    >>>
-    >>> # decrypt with private key
-    >>> decrypted_secret_key = decrypt_with_private_key(
-    ...     encrypted_secret_key, private_encryption_key)
-    >>> decrypted_secret_key == secret_key
-    True
 
     :param bytes secret_key: the key to encrypt
     :param public_encryption_key: the public encryption key

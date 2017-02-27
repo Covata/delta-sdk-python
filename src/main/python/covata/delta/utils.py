@@ -12,33 +12,27 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import logging
 import inspect
+import functools
 
-__all__ = ["LogMixin"]
+
+def check_arguments(arguments, validation_function, fail_message):
+    def decorator(function):
+        @functools.wraps(function)
+        def _f(*args, **kwargs):
+            keys, _, _, _ = inspect.getargspec(function)
+            ins = dict(zip(keys, args))
+            ins.update(kwargs)
+            generator = ((x, y) for x, y in ins.items() if x in arguments)
+            for arg, value in generator:
+                if not validation_function(value):
+                    raise ValueError("{} {}".format(arg, fail_message))
+            return function(*args, **kwargs)
+        return _f
+    return decorator
 
 
-class LogMixin(object):
-    @property
-    def logger(self):
-        return logging.getLogger(self.__caller())
-
-    def __caller(self):
-        """
-        Gets the name of the caller in {package}.{module}.{class} format
-
-        :return: the name of the caller
-        """
-        # type: () -> str
-        stack = inspect.stack()
-        if len(stack) < 3:
-            return ''
-
-        caller_frame = stack[2][0]
-        module = inspect.getmodule(caller_frame)
-        name = filter(lambda x: x is not None, [
-            module.__name__ if module else None,
-            self.__class__.__name__])
-
-        del caller_frame
-        return ".".join(name)
+def check_id(arguments):
+    return check_arguments(arguments,
+                           lambda x: x is not None and str(x) is not "",
+                           "must be a nonempty string")

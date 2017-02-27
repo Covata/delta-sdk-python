@@ -17,12 +17,14 @@ from base64 import b64encode, b64decode
 
 import requests
 
-from covata.delta import utils
-from covata.delta import crypto
-from covata.delta import signer
+from . import signer, utils
 
 
-class ApiClient(utils.LogMixin):
+class ApiClient:
+    """
+    The Delta API Client is an abstraction over the Delta API for execution of
+    requests and responses.
+    """
 
     DELTA_URL = 'https://delta.covata.io/v1'        # type: str
     RESOURCE_IDENTITIES = '/identities'             # type: str
@@ -41,27 +43,27 @@ class ApiClient(utils.LogMixin):
     def key_store(self):
         return self.__key_store
 
-    def register_identity(self, external_id=None, metadata=None):
+    def register_identity(self, public_encryption_key, public_signing_key,
+                          external_id=None, metadata=None):
         """
         Creates a new identity in Delta with the provided metadata
         and external id.
 
+        :param str public_encryption_key:
+            the public encryption key to associate with the identity
+        :param str public_signing_key:
+            the public signing key to associate with the identity
         :param external_id: the external id to associate with the identity
-        :param metadata: the metadata to associate with the identity
-        :return: the id of the newly created identity
         :type external_id: str | None
+        :param metadata: the metadata to associate with the identity
         :type metadata: dict[str, str] | None
+        :return: the id of the newly created identity
         :rtype: str
         """
-        private_signing_key = crypto.generate_private_key()
-        private_encryption_key = crypto.generate_private_key()
-
-        public_signing_key = private_signing_key.public_key()
-        public_encryption_key = private_encryption_key.public_key()
 
         body = dict(
-            signingPublicKey=crypto.serialize_public_key(public_signing_key),
-            cryptoPublicKey=crypto.serialize_public_key(public_encryption_key),
+            signingPublicKey=public_signing_key,
+            cryptoPublicKey=public_encryption_key,
             externalId=external_id,
             metadata=metadata)
 
@@ -71,12 +73,9 @@ class ApiClient(utils.LogMixin):
         response.raise_for_status()
         identity_id = response.json()['identityId']
 
-        self.key_store.store_keys(
-            identity_id=identity_id,
-            private_signing_key=private_signing_key,
-            private_encryption_key=private_encryption_key)
         return identity_id
 
+    @utils.check_id("requestor_id, identity_id")
     def get_identity(self, requestor_id, identity_id):
         """
         Gets the identity matching the given identity id.
@@ -96,6 +95,44 @@ class ApiClient(utils.LogMixin):
         identity = response.json()
         return identity
 
+    @utils.check_id("requestor_id")
+    @utils.check_arguments(
+        "page, page_size",
+        lambda x: x is None or int(x) > 0,
+        "must be a non-zero positive integer")
+    @utils.check_arguments(
+        "metadata",
+        lambda x: x is not None and dict(x),
+        "must be a non-empty dict[str, str]")
+    def get_identities_by_metadata(self, requestor_id, metadata,
+                                   page=None, page_size=None):
+        """
+        Gets a list of identities matching the given metadata key and value
+        pairs, bound by the pagination parameters.
+
+        :param str requestor_id: the authenticating identity id
+        :param metadata: the metadata key and value pairs to filter
+        :type metadata: dict[str, str]
+        :param page: the page number
+        :type page: int | None
+        :param page_size: the page size
+        :type page_size: int | None
+        :return: a list of identities satisfying the request
+        :rtype: list[dict[str, any]]
+        """
+        metadata_ = dict(("metadata." + k, v) for k, v in metadata.items())
+        response = requests.get(
+            url="{base_url}{resource}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_IDENTITIES),
+            params=dict(metadata_,
+                        page=int(page) if page else None,
+                        pageSize=int(page_size) if page_size else None),
+            auth=self.signer(requestor_id))
+        response.raise_for_status()
+        return response.json()
+
+    @utils.check_id("requestor_id")
     def create_secret(self, requestor_id, content, encryption_details):
         """
         Creates a new secret in Delta. The key used for encryption should
@@ -126,6 +163,7 @@ class ApiClient(utils.LogMixin):
         response.raise_for_status()
         return response.json()
 
+    @utils.check_id("requestor_id, base_secret_id, rsa_key_owner_id")
     def share_secret(self, requestor_id, content, encryption_details,
                      base_secret_id, rsa_key_owner_id):
         """
@@ -164,6 +202,7 @@ class ApiClient(utils.LogMixin):
         response.raise_for_status()
         return response.json()
 
+    @utils.check_id("requestor_id, secret_id")
     def delete_secret(self, requestor_id, secret_id):
         """
         Deletes the secret with the given secret id.
@@ -179,6 +218,7 @@ class ApiClient(utils.LogMixin):
             auth=self.signer(requestor_id))
         response.raise_for_status()
 
+    @utils.check_id("requestor_id, secret_id")
     def get_secret(self, requestor_id, secret_id):
         """
         Gets the given secret. This does not include the metadata and contents,
@@ -198,11 +238,9 @@ class ApiClient(utils.LogMixin):
                 secret_id=secret_id),
             auth=self.signer(requestor_id))
         response.raise_for_status()
-        secret = response.json()
-        for k, v in secret["encryptionDetails"].items():
-            secret["encryptionDetails"][k] = b64decode(v)
-        return secret
+        return response.json()
 
+    @utils.check_id("requestor_id, secret_id")
     def get_secret_metadata(self, requestor_id, secret_id):
         """
         Gets the metadata key and value pairs for the given secret.
@@ -224,6 +262,7 @@ class ApiClient(utils.LogMixin):
         version = int(response.headers["ETag"])
         return metadata, version
 
+    @utils.check_id("requestor_id, secret_id")
     def get_secret_content(self, requestor_id, secret_id):
         """
         Gets the contents of the given secret.
@@ -243,6 +282,7 @@ class ApiClient(utils.LogMixin):
         response.raise_for_status()
         return b64decode(response.json())
 
+    @utils.check_id("requestor_id, secret_id")
     def update_secret_metadata(self,
                                requestor_id,
                                secret_id,
@@ -273,6 +313,7 @@ class ApiClient(utils.LogMixin):
 
         response.raise_for_status()
 
+    @utils.check_id("requestor_id, identity_id")
     def update_identity_metadata(self,
                                  requestor_id,
                                  identity_id,
@@ -302,6 +343,7 @@ class ApiClient(utils.LogMixin):
             auth=self.signer(requestor_id))
         response.raise_for_status()
 
+    @utils.check_id("identity_id")
     def signer(self, identity_id):
         """
         Generates a request signer function for the
