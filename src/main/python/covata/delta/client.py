@@ -434,7 +434,7 @@ class Secret:
         The credentials of the RSA key owner must be present in the local
         key store.
 
-        :param identity_id: the recipient identity id
+        :param str identity_id: the recipient identity id
         :return: the derived secret
         :rtype: :class:`~.Secret`
         """

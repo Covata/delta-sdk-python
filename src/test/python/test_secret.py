@@ -14,6 +14,8 @@
 
 import pytest
 from covata.delta import Identity
+from covata.delta import Secret
+from covata.delta import EncryptionDetails
 
 
 @pytest.fixture(scope="function")
@@ -39,27 +41,34 @@ def identity_b(client):
                     metadata=dict(name="b"))
 
 
-@pytest.mark.parametrize("id_to_retrieve", [None, "other_identity_id"])
-def test_get_identity(identity_a, id_to_retrieve, client):
-    identity_a.get_identity(id_to_retrieve)
-    client.get_identity.assert_called_with(identity_a.id, id_to_retrieve)
+@pytest.fixture(scope="function")
+def secret(client):
+    return Secret(client,
+                  id="id-1",
+                  created="123",
+                  rsa_key_owner="id-a",
+                  created_by="id-a",
+                  encryption_details=EncryptionDetails(
+                      symmetric_key="sym-a",
+                      initialisation_vector="iv-a"
+                  ))
 
 
-@pytest.mark.parametrize("metadata", [{}, dict(name="Bob")])
-@pytest.mark.parametrize("page", [None, 1])
-@pytest.mark.parametrize("page_size", [None, 5])
-def test_get_identities_by_metadata(identity_a, metadata, page, page_size,
-                                    client):
-    identity_a.get_identities_by_metadata(metadata, page, page_size)
-    client.get_identities_by_metadata.assert_called_with(
-        identity_a.id, metadata, page, page_size)
+def test_get_content(secret, client):
+    secret.get_content()
+    client.get_secret_content.assert_called_with(
+        secret.created_by,
+        secret.id,
+        secret.encryption_details.symmetric_key,
+        secret.encryption_details.initialisation_vector)
 
 
-def test_create_secret(identity_a, client):
-    identity_a.create_secret("my secret")
-    client.create_secret.assert_called_with(identity_a.id, "my secret")
+def test_share_with(secret, identity_b, client):
+    secret.share_with(identity_b.id)
+    client.share_secret.assert_called_with(secret.created_by,
+                                           identity_b.id,
+                                           secret.id)
 
 
-def test_repr(identity_a, identity_b):
-    assert str(identity_a) == "Identity(id={})".format(identity_a.id)
-    assert str(identity_b) == "Identity(id={})".format(identity_b.id)
+def test_repr(secret):
+    assert str(secret) == "Secret(id={})".format(secret.id)
