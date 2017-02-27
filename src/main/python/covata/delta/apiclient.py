@@ -176,9 +176,9 @@ class ApiClient:
         in a suitable string encoding (such as base64).
 
         :param str requestor_id: the authenticating identity id
-        :param bytes content: the contents of the secret
+        :param str content: the contents of the secret
         :param encryption_details: the encryption details
-        :type encryption_details: dict[str, bytes]
+        :type encryption_details: dict[str, str]
         :param str base_secret_id: the id of the base secret
         :param str rsa_key_owner_id: the id of the rsa key owner
         :return: the created derived secret
@@ -289,6 +289,7 @@ class ApiClient:
         Updates the metadata of the given secret given the version number.
         The version of a secret's metadata can be obtained by calling
         :func:`~.ApiClient.get_secret`.
+
         A newly created base secret has a metadata version of 1.
 
         :param str requestor_id: the authenticating identity id
@@ -320,6 +321,7 @@ class ApiClient:
         Updates the metadata of the given identity given the version number.
         The version of an identity's metadata can be obtained by calling
         :func:`~.ApiClient.get_identity`.
+
         An identity has an initial metadata version of 1.
 
         :param str requestor_id: the authenticating identity id
