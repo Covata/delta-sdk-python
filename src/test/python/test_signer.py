@@ -18,27 +18,25 @@ import json
 import re
 from datetime import datetime
 import six.moves.urllib as urllib
-from covata.delta.signer import __encode_uri, SignatureMaterial
+import covata.delta.signer.__encode_uri as enode_uri
+from covata.delta.signer import SignatureMaterial
 from freezegun import freeze_time
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
-from covata.delta import crypto
 
 freeze_time("2017-01-03 14:48:10")
 
-UNDESIRED_HEADERS = ["Connection", "Content-Length"]
 SIGNING_ALGORITHM = "CVT1-RSA4096-SHA256"
 CVT_DATE_FORMAT = "%Y%m%dT%H%M%SZ"
 
 
-def test_non_empty_payload():
-    assert signer.__get_hashed_payload(b'{"name": "rattan"}') == \
-    '4567de0d9e41eb8cc82ed6696700153adc78a43a4d09935d19e0804009d83737'
-
-
-def test_empty_payload():
-    assert signer.__get_hashed_payload(b'{}') == \
-    '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a'
+@pytest.mark.parametrize('payload, expected_hash', [
+    (b'{"name": "user"}',
+     '5077ee49430b0c34347573ca6d189b29fc98cf15b63b74f82460cf46ac1bb0a5'),
+    (b'{}', '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a'),
+])
+def test_get_hashed_payload(payload, expected_hash):
+    assert signer.__get_hashed_payload(payload) == expected_hash
 
 
 def test_malformed_payload():
@@ -86,16 +84,14 @@ def test_nested_payload():
            signer.__get_hashed_payload(sorted_json)
 
 
-def test_uri_encoding_with_space():
-    assert signer.__encode_uri("/identity blah/") == '/identity%20blah/'
-
-
-def test_uri_encoding_with_hyphen():
-    assert signer.__encode_uri("/identity-blah/") == '/identity-blah/'
-
-
-def test_uri_encoding_with_uppercase():
-    assert signer.__encode_uri("/identityABC/") == '/identityABC/'
+@pytest.mark.parametrize('url, expected_encoded_url', [
+    ('/identity blah/', '/identity%20blah/'),
+    ('/identity-blah/', '/identity-blah/'),
+    ('/', '/'),
+    ('/identityABC/', '/identityABC/'),
+])
+def test_uri_endoing(url, expected_encoded_url):
+    assert signer.__encode_uri(url) == expected_encoded_url
 
 
 def test_signature_material(private_key):
@@ -121,7 +117,7 @@ def test_signature_material(private_key):
         cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)
         headers_ = dict(headers)
         headers_["Cvt-Date"] = cvt_date
-        uri = __encode_uri("/".join(url_parsed.path.split("/")[2:]))
+        uri = enode_uri("/".join(url_parsed.path.split("/")[2:]))
         query = url_parsed.query.replace("+", "%20")
         canonical_headers = 'content-type:application/json\n cvt-date:' \
                             + cvt_date
