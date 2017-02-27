@@ -49,7 +49,8 @@ BUILD_DEPENDENCIES = [
     "pytest-mock",
     "pytest-cov",
     "sphinx-rtd-theme",
-    "responses"
+    "responses",
+    "freezegun"
 ]
 
 @init
