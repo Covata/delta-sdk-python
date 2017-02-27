@@ -310,7 +310,7 @@ def test_get_secret_content(api_client, mock_signer):
             base_path=ApiClient.DELTA_URL,
             resource=ApiClient.RESOURCE_SECRETS,
             secret_id=secret_id),
-        json=expected_content)
+        expected_content)
 
     retrieved_content = api_client.get_secret_content(requestor_id, secret_id)
     mock_signer.assert_called_once_with(requestor_id)

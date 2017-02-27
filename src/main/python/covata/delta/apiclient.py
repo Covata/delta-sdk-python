@@ -59,7 +59,6 @@ class ApiClient:
         :return: the id of the newly created identity
         :rtype: str
         """
-
         body = dict(
             signingPublicKey=public_signing_key,
             cryptoPublicKey=public_encryption_key,
@@ -267,7 +266,7 @@ class ApiClient:
         :param str requestor_id: the authenticating identity id
         :param str secret_id: the secret id to be retrieved
         :return: the retrieved secret
-        :rtype: dict[str, str]
+        :rtype: str
         """
         response = requests.get(
             url="{base_url}{resource}/{secret_id}/content".format(
@@ -277,7 +276,7 @@ class ApiClient:
             auth=self.signer(requestor_id))
 
         response.raise_for_status()
-        return response.json()
+        return response.text
 
     @utils.check_id("requestor_id, secret_id")
     def update_secret_metadata(self,
