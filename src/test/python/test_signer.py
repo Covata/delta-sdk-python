@@ -18,8 +18,6 @@ import json
 import re
 from datetime import datetime
 import six.moves.urllib as urllib
-import covata.delta.signer.__encode_uri as enode_uri
-from covata.delta.signer import SignatureMaterial
 from freezegun import freeze_time
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -52,7 +50,7 @@ def test_none_payload():
 
 def test_unordered_payload():
     assert signer.__get_hashed_payload(b'{"name": "rattan", "a": "value"}') == \
-    signer.__get_hashed_payload(b'{"a": "value", "name": "rattan"}')
+           signer.__get_hashed_payload(b'{"a": "value", "name": "rattan"}')
 
 
 def test_nested_payload():
@@ -117,21 +115,22 @@ def test_signature_material(private_key):
         cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)
         headers_ = dict(headers)
         headers_["Cvt-Date"] = cvt_date
-        uri = enode_uri("/".join(url_parsed.path.split("/")[2:]))
+        uri = signer.__encode_uri("/".join(url_parsed.path.split("/")[2:]))
         query = url_parsed.query.replace("+", "%20")
         canonical_headers = 'content-type:application/json\n cvt-date:' \
                             + cvt_date
         signed_headers = 'content-type;cvt-date'
         hashed_payload = \
             '758ffa295b9a475f04aef51abd60563dabb8df1988cf6d62b9298b1d5ba6b8bf'
-        materials = SignatureMaterial(method=method,
-                                      uri=uri,
-                                      headers_=headers_,
-                                      query_params=query,
-                                      canonical_headers=canonical_headers,
-                                      signed_headers=signed_headers,
-                                      hashed_payload=hashed_payload,
-                                      cvt_date=cvt_date)
+        materials = signer.SignatureMaterial(
+            method=method,
+            uri=uri,
+            headers_=headers_,
+            query_params=query,
+            canonical_headers=canonical_headers,
+            signed_headers=signed_headers,
+            hashed_payload=hashed_payload,
+            cvt_date=cvt_date)
         materials_from_signer = \
             signer.__get_signature_materials(method, url, headers, payload)
         assert materials.canonical_request == \
@@ -172,7 +171,7 @@ def test_updated_headers(private_key):
         signer.__get_signature_materials(method, url, headers, payload)
 
     auth_pattern = "{algorithm} Identity={identity_id}, " \
-        "SignedHeaders={signed_headers}, Signature=.*$" \
+                   "SignedHeaders={signed_headers}, Signature=.*$" \
         .format(algorithm=SIGNING_ALGORITHM,
                 identity_id=identity_id_,
                 signed_headers=signature_materials.signed_headers)
