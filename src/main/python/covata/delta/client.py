@@ -15,6 +15,8 @@
 from __future__ import absolute_import
 
 from . import crypto
+from collections import namedtuple
+from datetime import datetime
 
 
 class Client:
@@ -122,6 +124,39 @@ class Client:
                            identity["cryptoPublicKey"],
                            identity.get("externalId"),
                            identity.get("metadata"))
+
+    def get_events(self, identity_id, secret_id=None, rsa_key_owner_id=None):
+        """
+        Gets a list of events associated filtered by secret id or RSA key owner
+        or both secret id and RSA key owner
+
+        :param str identity_id: the authenticating identity id
+        :param secret_id: the secret id of interest
+        :type secret_id: str | None
+        :param rsa_key_owner_id: the rsa key owner id of interest
+        :type rsa_key_owner_id: str | None
+        :return: a list of audit events
+        :rtype: list[Event]
+        """
+        events = self.api_client.get_events(
+            identity_id, secret_id, rsa_key_owner_id)
+        for event in events:
+            details = event["eventDetails"]
+            timestamp = event["timestamp"]
+            yield Event(
+                event_details=EventDetails(
+                    base_secret_id=details.get("baseSecretId"),
+                    requestor_id=details.get("requesterId"),
+                    rsa_key_owner_id=details.get("rsaKeyOwnerId"),
+                    secret_id=details.get("secretId"),
+                    secret_owner_id=details.get("secretOwnerId")
+                ),
+                host=event["host"],
+                id=event["id"],
+                source_ip=event["sourceIp"],
+                timestamp=datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ"),
+                event_type=event["type"]
+            )
 
     def create_secret(self, identity_id, content):
         """
@@ -252,6 +287,20 @@ class Identity:
         return self.parent.get_identities_by_metadata(
             self.id, metadata, page, page_size)
 
+    def get_events(self, secret_id=None, rsa_key_owner_id=None):
+        """
+        Gets a list of events associated filtered by secret id or RSA key owner
+        or both secret id and RSA key owner
+
+        :param secret_id: the secret id of interest
+        :type secret_id: str | None
+        :param rsa_key_owner_id: the rsa key owner id of interest
+        :type rsa_key_owner_id: str | None
+        :return: a list of audit events
+        :rtype: list[Event]
+        """
+        return self.parent.get_events(self.id, secret_id, rsa_key_owner_id)
+
     def create_secret(self, content):
         """
         Creates a new secret in Delta with the given contents.
@@ -263,7 +312,7 @@ class Identity:
         return self.parent.create_secret(self.id, content)
 
     def __repr__(self):
-        return "{cls}(id={id})" \
+        return "{cls}(id='{id}')" \
             .format(cls=self.__class__.__name__,
                     id=self.id)
 
@@ -325,7 +374,7 @@ class Secret:
         return self.__encryption_details
 
     def __repr__(self):
-        return "{cls}(id={id})" \
+        return "{cls}(id='{id}')" \
             .format(cls=self.__class__.__name__,
                     id=self.id)
 
@@ -354,3 +403,81 @@ class EncryptionDetails:
     @property
     def initialisation_vector(self):
         return self.__initialisation_vector
+
+
+EventDetails = namedtuple("EventDetails", [
+    "base_secret_id",
+    "requestor_id",
+    "rsa_key_owner_id",
+    "secret_id",
+    "secret_owner_id"])
+
+
+class Event:
+    """
+    An instance of this class encapsulates an event in Covata Delta. An
+    event is an audit entry representing an action undertaken by an
+    identity on a secret
+    """
+
+    def __init__(self,
+                 event_details,
+                 host,
+                 id,
+                 source_ip,
+                 timestamp,
+                 event_type):
+        """
+        Creates a new :class:`~.Event` with the given parameters.
+
+        :param event_details: details of the audit event.
+        :type event_details: :class:`~.EventDetails`
+        :param str host: the host address
+        :param str id: the identifier of the event object
+        :param str source_ip: the source ip
+        :param timestamp: the timestamp
+        :type timestamp: datetime
+        :param str event_type:
+        """
+        self.__event_details = event_details
+        self.__host = host
+        self.__id = id
+        self.__source_ip = source_ip
+        self.__timestamp = timestamp
+        self.__event_type = event_type
+
+    @property
+    def event_details(self):
+        return self.__event_details
+
+    @property
+    def host(self):
+        return self.__host
+
+    @property
+    def id(self):
+        return self.__id
+
+    @property
+    def source_ip(self):
+        return self.__source_ip
+
+    @property
+    def timestamp(self):
+        return self.__timestamp
+
+    @property
+    def event_type(self):
+        return self.__event_type
+
+    def __repr__(self):
+        return "{cls}(id='{id}', host='{host}', source_ip='{source_ip}', " \
+               "timestamp={timestamp}, event_type='{event_type}', " \
+               "event_details={event_details})" \
+            .format(cls=self.__class__.__name__,
+                    id=self.id,
+                    host=self.host,
+                    source_ip=self.source_ip,
+                    timestamp=self.timestamp,
+                    event_type=self.event_type,
+                    event_details=self.event_details)
