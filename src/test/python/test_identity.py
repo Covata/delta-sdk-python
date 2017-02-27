@@ -56,5 +56,5 @@ def test_get_identities_by_metadata(identity_a, metadata, page, page_size,
 
 
 def test_repr(identity_a, identity_b):
-    assert str(identity_a) == "Identity(id={})".format(identity_a.id)
-    assert str(identity_b) == "Identity(id={})".format(identity_b.id)
+    assert str(identity_a) == "Identity(id='{}')".format(identity_a.id)
+    assert str(identity_b) == "Identity(id='{}')".format(identity_b.id)
