@@ -258,8 +258,8 @@ class Client:
         """
         Deletes the secret with the given secret id.
 
-        :param identity_id: the authenticating identity id
-        :param secret_id: the secret id
+        :param str identity_id: the authenticating identity id
+        :param str secret_id: the secret id
         """
         self.api_client.delete_secret(identity_id, secret_id)
 
@@ -357,7 +357,7 @@ class Identity:
         """
         Deletes the secret with the given secret id.
 
-        :param secret_id: the secret id
+        :param str secret_id: the secret id
         """
         self.parent.delete_secret(self.id, secret_id)
 
