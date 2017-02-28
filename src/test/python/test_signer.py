@@ -90,10 +90,12 @@ def test_uri_endoing(url, expected_encoded_url):
 
 @freeze_time()
 def test_signature_material():
+    cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)
     method = "POST"
     url = "https://delta.covata.io/v1/secrets?hello=w+orld"
     headers = {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Cvt-Date": cvt_date
     }
     payload = \
         b"""
@@ -108,9 +110,6 @@ def test_signature_material():
         """
 
     url_parsed = urllib.parse.urlparse(url)
-    cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)
-    headers_ = dict(headers)
-    headers_["Cvt-Date"] = cvt_date
     uri = signer.__encode_uri("/".join(url_parsed.path.split("/")[2:]))
     query = url_parsed.query.replace("+", "%20")
     canonical_headers = 'content-type:application/json\n cvt-date:' \
@@ -118,18 +117,25 @@ def test_signature_material():
     signed_headers = 'content-type;cvt-date'
     hashed_payload = \
         '758ffa295b9a475f04aef51abd60563dabb8df1988cf6d62b9298b1d5ba6b8bf'
+    expected_canonical_request = "\n".join(
+        [method, uri, query, canonical_headers, signed_headers, hashed_payload])
     expected_content_type = 'application/json'
+    expected_cvt_date_value = cvt_date
     materials_from_signer = \
         signer.__get_signature_materials(method, url, headers, payload)
 
-    assert(materials_from_signer.method is method)
-    assert(materials_from_signer.uri == uri)
-    assert (materials_from_signer.headers_ == headers_)
-    assert (materials_from_signer.query_params == query)
-    assert (materials_from_signer.canonical_headers == canonical_headers)
-    assert (materials_from_signer.signed_headers == signed_headers)
-    assert (materials_from_signer.hashed_payload == hashed_payload)
-    assert(materials_from_signer.headers_['Content-Type'] is expected_content_type)
+    assert materials_from_signer.method is method
+    assert materials_from_signer.uri == uri
+    assert materials_from_signer.headers_ == headers
+    assert materials_from_signer.query_params == query
+    assert materials_from_signer.canonical_headers == canonical_headers
+    assert materials_from_signer.canonical_request in expected_canonical_request
+    assert materials_from_signer.signed_headers == signed_headers
+    assert materials_from_signer.hashed_payload == hashed_payload
+    assert materials_from_signer.headers_['Content-Type'] is \
+           expected_content_type
+    assert materials_from_signer.headers_[
+               'Cvt-Date'] == expected_cvt_date_value
 
 
 def test_updated_headers(private_key):
