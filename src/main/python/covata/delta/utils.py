@@ -13,23 +13,21 @@
 #   limitations under the License.
 
 import inspect
-import functools
+from decorator import decorator
 
 
 def check_arguments(arguments, validation_function, fail_message):
-    def decorator(function):
-        @functools.wraps(function)
-        def _f(*args, **kwargs):
-            keys, _, _, _ = inspect.getargspec(function)
-            ins = dict(zip(keys, args))
-            ins.update(kwargs)
-            generator = ((x, y) for x, y in ins.items() if x in arguments)
-            for arg, value in generator:
-                if not validation_function(value):
-                    raise ValueError("{} {}".format(arg, fail_message))
-            return function(*args, **kwargs)
-        return _f
-    return decorator
+    @decorator
+    def _f(function, *args, **kwargs):
+        keys, _, _, _ = inspect.getargspec(function)
+        ins = dict(zip(keys, args))
+        ins.update(kwargs)
+        generator = ((x, y) for x, y in ins.items() if x in arguments)
+        for arg, value in generator:
+            if not validation_function(value):
+                raise ValueError("{} {}".format(arg, fail_message))
+        return function(*args, **kwargs)
+    return _f
 
 
 def check_id(arguments):
