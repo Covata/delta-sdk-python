@@ -19,10 +19,6 @@ import re
 from datetime import datetime
 import six.moves.urllib as urllib
 from freezegun import freeze_time
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding
-
-freeze_time("2017-01-03 14:48:10")
 
 SIGNING_ALGORITHM = "CVT1-RSA4096-SHA256"
 CVT_DATE_FORMAT = "%Y%m%dT%H%M%SZ"
@@ -92,7 +88,8 @@ def test_uri_endoing(url, expected_encoded_url):
     assert signer.__encode_uri(url) == expected_encoded_url
 
 
-def test_signature_material(private_key):
+@freeze_time()
+def test_signature_material():
     method = "POST"
     url = "https://delta.covata.io/v1/secrets?hello=w+orld"
     headers = {
@@ -110,48 +107,34 @@ def test_signature_material(private_key):
         }
         """
 
-    with freeze_time():
-        url_parsed = urllib.parse.urlparse(url)
-        cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)
-        headers_ = dict(headers)
-        headers_["Cvt-Date"] = cvt_date
-        uri = signer.__encode_uri("/".join(url_parsed.path.split("/")[2:]))
-        query = url_parsed.query.replace("+", "%20")
-        canonical_headers = 'content-type:application/json\n cvt-date:' \
-                            + cvt_date
-        signed_headers = 'content-type;cvt-date'
-        hashed_payload = \
-            '758ffa295b9a475f04aef51abd60563dabb8df1988cf6d62b9298b1d5ba6b8bf'
-        materials = signer.SignatureMaterial(
-            method=method,
-            uri=uri,
-            headers_=headers_,
-            query_params=query,
-            canonical_headers=canonical_headers,
-            signed_headers=signed_headers,
-            hashed_payload=hashed_payload,
-            cvt_date=cvt_date)
-        materials_from_signer = \
-            signer.__get_signature_materials(method, url, headers, payload)
-        assert materials.canonical_request == \
-               materials_from_signer.canonical_request
+    url_parsed = urllib.parse.urlparse(url)
+    cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)
+    headers_ = dict(headers)
+    headers_["Cvt-Date"] = cvt_date
+    uri = signer.__encode_uri("/".join(url_parsed.path.split("/")[2:]))
+    query = url_parsed.query.replace("+", "%20")
+    canonical_headers = 'content-type:application/json\n cvt-date:' \
+                        + cvt_date
+    signed_headers = 'content-type;cvt-date'
+    hashed_payload = \
+        '758ffa295b9a475f04aef51abd60563dabb8df1988cf6d62b9298b1d5ba6b8bf'
+    expected_content_type = 'application/json'
+    materials_from_signer = \
+        signer.__get_signature_materials(method, url, headers, payload)
 
-        signature = materials_from_signer.sign(private_key)
-
-        public_key = private_key.public_key()
-        public_key.verify(
-            signature,
-            materials_from_signer.string_to_sign.encode("utf-8"),
-            padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),
-                salt_length=32),
-            hashes.SHA256()
-        )
+    assert(materials_from_signer.method is method)
+    assert(materials_from_signer.uri == uri)
+    assert (materials_from_signer.headers_ == headers_)
+    assert (materials_from_signer.query_params == query)
+    assert (materials_from_signer.canonical_headers == canonical_headers)
+    assert (materials_from_signer.signed_headers == signed_headers)
+    assert (materials_from_signer.hashed_payload == hashed_payload)
+    assert(materials_from_signer.headers_['Content-Type'] is expected_content_type)
 
 
 def test_updated_headers(private_key):
     method = "POST"
-    url = "https://delta.covata.io/v1/secrets?hello=w+orld"
+    url = "https://delta.covata.io/v1/secrets?hello=world"
     headers = {
         "Content-Type": "application/json"
     }
@@ -166,7 +149,7 @@ def test_updated_headers(private_key):
             }
         }
         """
-    identity_id_ = 'Rattan-Id'
+    identity_id_ = 'Delta-Id'
     signature_materials = \
         signer.__get_signature_materials(method, url, headers, payload)
 
