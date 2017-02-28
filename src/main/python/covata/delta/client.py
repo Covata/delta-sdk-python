@@ -254,6 +254,15 @@ class Client:
 
         return self.get_secret(recipient.id, response["id"])
 
+    def delete_secret(self, identity_id, secret_id):
+        """
+        Deletes the secret with the given secret id.
+
+        :param str identity_id: the authenticating identity id
+        :param str secret_id: the secret id
+        """
+        self.api_client.delete_secret(identity_id, secret_id)
+
 
 class Identity:
     """
@@ -343,6 +352,14 @@ class Identity:
         :rtype: :class:`~.Secret`
         """
         return self.parent.create_secret(self.id, content)
+
+    def delete_secret(self, secret_id):
+        """
+        Deletes the secret with the given secret id.
+
+        :param str secret_id: the secret id
+        """
+        self.parent.delete_secret(self.id, secret_id)
 
     def __repr__(self):
         return "{cls}(id={id})" \
