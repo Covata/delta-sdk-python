@@ -47,4 +47,5 @@ def main():
     print("Identity B: Retrieved a derived secret; secret id = {}; content = "
           "{}".format(derived_secret.id, derived_secret.get_content()))
 
-main()
+if __name__ == "__main__":
+    main()
