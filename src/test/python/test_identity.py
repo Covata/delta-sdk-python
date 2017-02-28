@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 import pytest
+import uuid
 from covata.delta import Identity
 
 
@@ -24,10 +25,10 @@ def client(mocker):
 @pytest.fixture(scope="function")
 def identity_a(client):
     return Identity(parent=client,
-             id="id-a",
-             public_encryption_key="key-a",
-             external_id="ext-a",
-             metadata=dict(name="a"))
+                    id="id-a",
+                    public_encryption_key="key-a",
+                    external_id="ext-a",
+                    metadata=dict(name="a"))
 
 
 @pytest.fixture(scope="function")
@@ -53,6 +54,18 @@ def test_get_identities_by_metadata(identity_a, metadata, page, page_size,
     identity_a.get_identities_by_metadata(metadata, page, page_size)
     client.get_identities_by_metadata.assert_called_with(
         identity_a.id, metadata, page, page_size)
+
+
+@pytest.mark.parametrize("content", [None, "my secret", b"my secret"])
+def test_create_secret(identity_a, client, content):
+    identity_a.create_secret(content)
+    client.create_secret.assert_called_with(identity_a.id, content)
+
+
+@pytest.mark.parametrize("secret_id", [None, str(uuid.uuid4())])
+def test_delete_secret(identity_a, client, secret_id):
+    identity_a.delete_secret(secret_id)
+    client.delete_secret.assert_called_with(identity_a.id, secret_id)
 
 
 def test_repr(identity_a, identity_b):

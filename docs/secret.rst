@@ -12,11 +12,10 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
+Secret
+======
 
-Cryptography
-============
+.. currentmodule:: covata.delta
 
-The Delta Crypto package provides functionality for client-side cryptography.
-
-.. automodule:: covata.delta.crypto
-    :members:
+.. autoclass:: Secret
+   :members:
