@@ -390,6 +390,52 @@ def test_get_identities_by_metadata__should__fail_when_metadata_is_empty(
     assert "metadata must be a non-empty dict[str, str]" in str(excinfo.value)
 
 
+@responses.activate
+@pytest.mark.parametrize("secret_id", [None, str(uuid.uuid4())])
+@pytest.mark.parametrize("rsa_key_owner_id", [None, str(uuid.uuid4())])
+def test_get_events(api_client, mock_signer, secret_id, rsa_key_owner_id):
+    requestor_id = str(uuid.uuid4())
+    expected_query_params = {
+        "purpose": "AUDIT"
+    }
+    inputs = {}
+    if secret_id is not None:
+        inputs["secret_id"] = secret_id
+        expected_query_params["secretId"] = secret_id
+    if rsa_key_owner_id is not None:
+        inputs["rsa_key_owner_id"] = rsa_key_owner_id
+        expected_query_params["rsaKeyOwner"] = rsa_key_owner_id
+
+    expected_json = [{
+        'eventDetails': {
+            'baseSecretId': None,
+            'requesterId': requestor_id,
+            'rsaKeyOwnerId': inputs.get(secret_id, str(uuid.uuid4())),
+            'secretId': inputs.get(rsa_key_owner_id, str(uuid.uuid4())),
+            'secretOwnerId': requestor_id},
+        'host': 'delta.covata.io',
+        'id': '25b545e0-fe04-11e6-a09b-ff649a342cab',
+        'sourceIp': '203.191.194.14',
+        'timestamp': '2017-02-28T22:20:39.097Z',
+        'type': 'access_success_event'}]
+    responses.add(
+        responses.GET,
+        "{base_path}{resource}".format(
+            base_path=ApiClient.DELTA_URL,
+            resource=ApiClient.RESOURCE_EVENTS),
+        json=expected_json)
+    response = api_client.get_events(requestor_id, secret_id, rsa_key_owner_id)
+
+    assert response == expected_json
+    mock_signer.assert_called_once_with(requestor_id)
+    assert len(responses.calls) == 1
+
+    url = urllib.parse.urlparse(responses.calls[0].request.url)
+    query_params = dict(urllib.parse.parse_qsl(url.query))
+
+    assert query_params == expected_query_params
+
+
 def test_construct_signer(mocker, api_client, key_store, private_key):
     get_private_signing_key = mocker.patch.object(
         key_store, 'get_private_signing_key', return_value=private_key)

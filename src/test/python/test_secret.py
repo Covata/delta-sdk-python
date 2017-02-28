@@ -71,4 +71,4 @@ def test_share_with(secret, identity_b, client):
 
 
 def test_repr(secret):
-    assert str(secret) == "Secret(id={})".format(secret.id)
+    assert str(secret) == "Secret(id='{}')".format(secret.id)
