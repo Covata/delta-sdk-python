@@ -273,3 +273,10 @@ def test_share_secret(client, api_client, key_store, private_key, mock_crypto):
     assert secret.encryption_details.initialisation_vector == mock_crypto["iv"]
     assert secret.encryption_details.symmetric_key == mock_crypto["key"]
     assert secret.base_secret_id == secret_id
+
+
+@pytest.mark.parametrize("identity_id", [None, str(uuid.uuid4())])
+@pytest.mark.parametrize("secret_id", [None, str(uuid.uuid4())])
+def test_delete_secret(client, api_client, identity_id, secret_id):
+    client.delete_secret(identity_id, secret_id)
+    api_client.delete_secret.assert_called_with(identity_id, secret_id)
