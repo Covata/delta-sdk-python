@@ -374,6 +374,7 @@ def test_get_identities_by_metadata__should__fail_when_page_is_invalid(
             page=page,
             page_size=page_size)
     mock_signer.assert_not_called()
+    assert len(responses.calls) == 0
     assert "must be a non-zero positive integer" in str(excinfo.value)
 
 
@@ -387,6 +388,7 @@ def test_get_identities_by_metadata__should__fail_when_metadata_is_empty(
             requestor_id=requestor_id,
             metadata=metadata)
     mock_signer.assert_not_called()
+    assert len(responses.calls) == 0
     assert "metadata must be a non-empty dict[str, str]" in str(excinfo.value)
 
 
@@ -434,6 +436,25 @@ def test_get_events(api_client, mock_signer, secret_id, rsa_key_owner_id):
     query_params = dict(urllib.parse.parse_qsl(url.query))
 
     assert query_params == expected_query_params
+
+
+@responses.activate
+@pytest.mark.parametrize("requestor_id, secret_id, rsa_key_owner_id", [
+    (None, str(uuid.uuid4()), str(uuid.uuid4())),
+    ("", str(uuid.uuid4()), str(uuid.uuid4())),
+    (str(uuid.uuid4()), None, ""),
+    (str(uuid.uuid4()), str(uuid.uuid4()), ""),
+    (str(uuid.uuid4()), "", None),
+    (str(uuid.uuid4()), "", str(uuid.uuid4())),
+    (str(uuid.uuid4()), "", ""),
+])
+def test_get_events__should__fail_when_id_is_an_empty_string(
+        api_client, mock_signer, requestor_id, secret_id, rsa_key_owner_id):
+    with pytest.raises(ValueError) as excinfo:
+        api_client.get_events(requestor_id, secret_id, rsa_key_owner_id)
+    mock_signer.assert_not_called()
+    assert len(responses.calls) == 0
+    assert "must be a nonempty string" in str(excinfo.value)
 
 
 def test_construct_signer(mocker, api_client, key_store, private_key):
