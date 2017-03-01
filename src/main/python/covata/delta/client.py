@@ -381,7 +381,7 @@ class Identity:
     def get_events(self, secret_id=None, rsa_key_owner_id=None):
         """
         Gets a list of events associated filtered by secret id or RSA key owner
-        or both secret id and RSA key owner
+        or both secret id and RSA key owner.
 
         :param secret_id: the secret id of interest
         :type secret_id: str | None
