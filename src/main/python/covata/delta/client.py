@@ -411,9 +411,7 @@ class Identity:
         self.parent.delete_secret(self.id, secret_id)
 
     def __repr__(self):
-        return "{cls}(id='{id}')" \
-            .format(cls=self.__class__.__name__,
-                    id=self.id)
+        return "{cls}(id={id})".format(cls=self.__class__.__name__, id=self.id)
 
 
 class Secret:
@@ -510,9 +508,7 @@ class Secret:
             self.id)
 
     def __repr__(self):
-        return "{cls}(id='{id}')" \
-            .format(cls=self.__class__.__name__,
-                    id=self.id)
+        return "{cls}(id={id})".format(cls=self.__class__.__name__, id=self.id)
 
 
 class EncryptionDetails:
@@ -607,13 +603,4 @@ class Event:
         return self.__event_type
 
     def __repr__(self):
-        return "{cls}(id='{id}', host='{host}', source_ip='{source_ip}', " \
-               "timestamp={timestamp}, event_type='{event_type}', " \
-               "event_details={event_details})" \
-            .format(cls=self.__class__.__name__,
-                    id=self.id,
-                    host=self.host,
-                    source_ip=self.source_ip,
-                    timestamp=self.timestamp,
-                    event_type=self.event_type,
-                    event_details=self.event_details)
+        return "{cls}(id={id})".format(cls=self.__class__.__name__, id=self.id)

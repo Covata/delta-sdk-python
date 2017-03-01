@@ -68,6 +68,14 @@ def test_delete_secret(identity_a, client, secret_id):
     client.delete_secret.assert_called_with(identity_a.id, secret_id)
 
 
+@pytest.mark.parametrize("secret_id", [None, str(uuid.uuid4())])
+@pytest.mark.parametrize("rsa_key_owner_id", [None, str(uuid.uuid4())])
+def test_get_events(identity_a, client, secret_id, rsa_key_owner_id):
+    identity_a.get_events(secret_id, rsa_key_owner_id)
+    client.get_events.assert_called_with(identity_a.id, secret_id,
+                                         rsa_key_owner_id)
+
+
 def test_repr(identity_a, identity_b):
-    assert str(identity_a) == "Identity(id='{}')".format(identity_a.id)
-    assert str(identity_b) == "Identity(id='{}')".format(identity_b.id)
+    assert str(identity_a) == "Identity(id={})".format(identity_a.id)
+    assert str(identity_b) == "Identity(id={})".format(identity_b.id)
