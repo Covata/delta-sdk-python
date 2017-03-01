@@ -19,7 +19,7 @@ from covata.delta.keystore import FileSystemKeyStore
 
 @pytest.fixture(scope="function")
 def fs_key_store(temp_directory):
-    return FileSystemKeyStore(temp_directory, b"passphrase")
+    return FileSystemKeyStore(temp_directory, "passphrase")
 
 
 def test_decrypt_private_signing_key(fs_key_store, private_key, key2bytes):

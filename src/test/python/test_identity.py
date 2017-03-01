@@ -63,6 +63,12 @@ def test_create_secret(identity_a, client, content):
 
 
 @pytest.mark.parametrize("secret_id", [None, str(uuid.uuid4())])
+def test_retrieve_secret(identity_a, client, secret_id):
+    identity_a.retrieve_secret(secret_id)
+    client.get_secret.assert_called_with(identity_a.id, secret_id)
+
+
+@pytest.mark.parametrize("secret_id", [None, str(uuid.uuid4())])
 def test_delete_secret(identity_a, client, secret_id):
     identity_a.delete_secret(secret_id)
     client.delete_secret.assert_called_with(identity_a.id, secret_id)
