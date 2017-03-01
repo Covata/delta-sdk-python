@@ -34,7 +34,7 @@ def main():
 
     secret = identity_a.create_secret("Hello World!".encode("utf-8"))
     print("Identity A: Created a base secret; secret id = {}; content = {}"
-          .format(secret.id, secret.get_content().decode()))
+          .format(secret.id, secret.get_content().decode('utf-8')))
 
     identity_b = client.create_identity()
     print("Identity B created; identity id = {}".format(identity_b.id))
@@ -44,8 +44,9 @@ def main():
           "derived secret id = {}".format(derived_secret_id))
 
     derived_secret = identity_b.retrieve_secret(derived_secret_id)
-    print("Identity B: Retrieved a derived secret; secret id = {}; content = "
-          "{}".format(derived_secret.id, derived_secret.get_content().decode()))
+    print("Identity B: Retrieved a derived secret; secret id = {}; content = {}"
+          .format(derived_secret.id,
+                  derived_secret.get_content().decode('utf-8')))
 
 if __name__ == "__main__":
     main()
