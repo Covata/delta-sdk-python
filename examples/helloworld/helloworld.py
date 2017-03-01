@@ -23,7 +23,7 @@ def main():
     You will need to have a folder called "keystore" in your home directory or
     will be created as a result of running this example.
     """
-    key_store = FileSystemKeyStore("~/keystore/", b"passPhrase")
+    key_store = FileSystemKeyStore("~/keystore/", "passPhrase")
     api_client = ApiClient(key_store)
     config = {"key_store": key_store, "api_client": api_client}
 
@@ -32,9 +32,9 @@ def main():
     identity_a = client.create_identity()
     print("Identity A created; identity id = {}".format(identity_a.id))
 
-    secret = identity_a.create_secret(b"Hello World!")
+    secret = identity_a.create_secret("Hello World!".encode("utf-8"))
     print("Identity A: Created a base secret; secret id = {}; content = {}"
-          .format(secret.id, secret.get_content()))
+          .format(secret.id, secret.get_content().decode()))
 
     identity_b = client.create_identity()
     print("Identity B created; identity id = {}".format(identity_b.id))
@@ -45,7 +45,7 @@ def main():
 
     derived_secret = identity_b.retrieve_secret(derived_secret_id)
     print("Identity B: Retrieved a derived secret; secret id = {}; content = "
-          "{}".format(derived_secret.id, derived_secret.get_content()))
+          "{}".format(derived_secret.id, derived_secret.get_content().decode()))
 
 if __name__ == "__main__":
     main()
