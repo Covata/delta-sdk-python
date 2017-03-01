@@ -353,6 +353,16 @@ class Identity:
         """
         return self.parent.create_secret(self.id, content)
 
+    def retrieve_secret(self, secret_id):
+        """
+        Retrieves a secret with this identity.
+
+        :param str secret_id: the secret id
+        :return: the secret
+        :rtype: :class:`~.Secret`
+        """
+        return self.parent.get_secret(self.id, secret_id)
+
     def delete_secret(self, secret_id):
         """
         Deletes the secret with the given secret id.
