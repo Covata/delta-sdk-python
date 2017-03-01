@@ -374,6 +374,7 @@ def test_get_identities_by_metadata__should__fail_when_page_is_invalid(
             page=page,
             page_size=page_size)
     mock_signer.assert_not_called()
+    assert len(responses.calls) == 0
     assert "must be a non-zero positive integer" in str(excinfo.value)
 
 
@@ -387,7 +388,73 @@ def test_get_identities_by_metadata__should__fail_when_metadata_is_empty(
             requestor_id=requestor_id,
             metadata=metadata)
     mock_signer.assert_not_called()
+    assert len(responses.calls) == 0
     assert "metadata must be a non-empty dict[str, str]" in str(excinfo.value)
+
+
+@responses.activate
+@pytest.mark.parametrize("secret_id", [None, str(uuid.uuid4())])
+@pytest.mark.parametrize("rsa_key_owner_id", [None, str(uuid.uuid4())])
+def test_get_events(api_client, mock_signer, secret_id, rsa_key_owner_id):
+    requestor_id = str(uuid.uuid4())
+    expected_query_params = {
+        "purpose": "AUDIT"
+    }
+    inputs = {}
+    if secret_id is not None:
+        inputs["secret_id"] = secret_id
+        expected_query_params["secretId"] = secret_id
+    if rsa_key_owner_id is not None:
+        inputs["rsa_key_owner_id"] = rsa_key_owner_id
+        expected_query_params["rsaKeyOwner"] = rsa_key_owner_id
+
+    expected_json = [{
+        'eventDetails': {
+            'baseSecretId': None,
+            'requesterId': requestor_id,
+            'rsaKeyOwnerId': inputs.get(secret_id, str(uuid.uuid4())),
+            'secretId': inputs.get(rsa_key_owner_id, str(uuid.uuid4())),
+            'secretOwnerId': requestor_id},
+        'host': 'delta.covata.io',
+        'id': '25b545e0-fe04-11e6-a09b-ff649a342cab',
+        'sourceIp': '203.191.194.14',
+        'timestamp': '2017-02-28T22:20:39.097Z',
+        'type': 'access_success_event'}]
+    responses.add(
+        responses.GET,
+        "{base_path}{resource}".format(
+            base_path=ApiClient.DELTA_URL,
+            resource=ApiClient.RESOURCE_EVENTS),
+        json=expected_json)
+    response = api_client.get_events(requestor_id, secret_id, rsa_key_owner_id)
+
+    assert response == expected_json
+    mock_signer.assert_called_once_with(requestor_id)
+    assert len(responses.calls) == 1
+
+    url = urllib.parse.urlparse(responses.calls[0].request.url)
+    query_params = dict(urllib.parse.parse_qsl(url.query))
+
+    assert query_params == expected_query_params
+
+
+@responses.activate
+@pytest.mark.parametrize("requestor_id, secret_id, rsa_key_owner_id", [
+    (None, str(uuid.uuid4()), str(uuid.uuid4())),
+    ("", str(uuid.uuid4()), str(uuid.uuid4())),
+    (str(uuid.uuid4()), None, ""),
+    (str(uuid.uuid4()), str(uuid.uuid4()), ""),
+    (str(uuid.uuid4()), "", None),
+    (str(uuid.uuid4()), "", str(uuid.uuid4())),
+    (str(uuid.uuid4()), "", ""),
+])
+def test_get_events__should__fail_when_id_is_an_empty_string(
+        api_client, mock_signer, requestor_id, secret_id, rsa_key_owner_id):
+    with pytest.raises(ValueError) as excinfo:
+        api_client.get_events(requestor_id, secret_id, rsa_key_owner_id)
+    mock_signer.assert_not_called()
+    assert len(responses.calls) == 0
+    assert "must be a nonempty string" in str(excinfo.value)
 
 
 def test_construct_signer(mocker, api_client, key_store, private_key):

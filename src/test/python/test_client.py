@@ -16,7 +16,8 @@ from base64 import b64encode
 import pytest
 import uuid
 
-from covata.delta import Client
+from covata.delta import Client, Event, EventDetails
+from datetime import datetime
 
 
 @pytest.fixture(scope="function")
@@ -280,3 +281,47 @@ def test_share_secret(client, api_client, key_store, private_key, mock_crypto):
 def test_delete_secret(client, api_client, identity_id, secret_id):
     client.delete_secret(identity_id, secret_id)
     api_client.delete_secret.assert_called_with(identity_id, secret_id)
+
+
+@pytest.mark.parametrize("secret_id", [None, str(uuid.uuid4())])
+@pytest.mark.parametrize("rsa_key_owner_id", [None, str(uuid.uuid4())])
+def test_get_events(client, api_client,
+                    secret_id, rsa_key_owner_id):
+    identity_id = str(uuid.uuid4())
+    inputs = {}
+    if secret_id is not None:
+        inputs["secret_id"] = secret_id
+    if rsa_key_owner_id is not None:
+        inputs["rsa_key_owner_id"] = rsa_key_owner_id
+
+    expected_response_json = [{
+        'eventDetails': {
+            'baseSecretId': None,
+            'requesterId': identity_id,
+            'rsaKeyOwnerId': inputs.get(secret_id, str(uuid.uuid4())),
+            'secretId': inputs.get(rsa_key_owner_id, str(uuid.uuid4())),
+            'secretOwnerId': identity_id},
+        'host': 'delta.covata.io',
+        'id': '25b545e0-fe04-11e6-a09b-ff649a342cab',
+        'sourceIp': '203.191.194.14',
+        'timestamp': '2017-02-28T22:20:39.097Z',
+        'type': 'access_success_event'}]
+    api_client.get_events.return_value = expected_response_json
+    response = list(client.get_events(identity_id, secret_id, rsa_key_owner_id))
+    assert len(response) == len(expected_response_json)
+
+    for r, expected in zip(response, expected_response_json):
+        expected_event_details = EventDetails(
+            base_secret_id=expected["eventDetails"]["baseSecretId"],
+            requestor_id=expected["eventDetails"]["requesterId"],
+            rsa_key_owner_id=expected["eventDetails"]["rsaKeyOwnerId"],
+            secret_id=expected["eventDetails"]["secretId"],
+            secret_owner_id=expected["eventDetails"]["secretOwnerId"]
+        )
+        assert r.event_details == expected_event_details
+        assert r.host == expected["host"]
+        assert r.id == expected["id"]
+        assert r.source_ip == expected["sourceIp"]
+        assert r.timestamp == datetime.strptime(
+            expected["timestamp"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        assert r.event_type == expected["type"]
