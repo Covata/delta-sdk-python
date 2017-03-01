@@ -115,7 +115,6 @@ def __get_signature_materials(method, url, headers, payload):
     cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)
     headers_ = dict(headers)
     headers_["Cvt-Date"] = cvt_date
-    headers_['Host'] = url_parsed.hostname
 
     # /master/identities/a123?key=an+arbitrary+value&key2=x
     uri = __encode_uri("/".join(url_parsed.path.split("/")[2:]))
