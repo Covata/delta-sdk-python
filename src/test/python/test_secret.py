@@ -70,5 +70,13 @@ def test_share_with(secret, identity_b, client):
                                            secret.id)
 
 
+@pytest.mark.parametrize("rsa_key_owner_id", [None, "rsa-key-owner-id"])
+def test_get_events(secret, rsa_key_owner_id, client):
+    secret.get_events(rsa_key_owner_id)
+    client.get_events.assert_called_with(secret.created_by,
+                                         secret.id,
+                                         rsa_key_owner_id)
+
+
 def test_repr(secret):
     assert str(secret) == "Secret(id={})".format(secret.id)

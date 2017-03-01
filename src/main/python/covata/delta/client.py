@@ -507,6 +507,22 @@ class Secret:
             identity_id,
             self.id)
 
+    def get_events(self, rsa_key_owner_id=None):
+        """
+        Gets a list of events associated filtered by this secret id or
+        RSA key owner or both this secret id and RSA key owner.
+
+        The credentials of the secret creator must be present in the local
+        key store.
+
+        :param rsa_key_owner_id: the rsa key owner id of interest
+        :type rsa_key_owner_id: str | None
+        :return: a list of audit events
+        :rtype: list[Event]
+        """
+        return self.parent.get_events(self.created_by, self.id,
+                                      rsa_key_owner_id)
+
     def __repr__(self):
         return "{cls}(id={id})".format(cls=self.__class__.__name__, id=self.id)
 
