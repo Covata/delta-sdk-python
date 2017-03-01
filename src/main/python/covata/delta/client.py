@@ -298,6 +298,39 @@ class Client:
         """
         self.api_client.delete_secret(identity_id, secret_id)
 
+    def get_secret_metadata(self, identity_id, secret_id):
+        """
+        Gets the metadata key and value pairs for the given secret.
+
+        :param str identity_id: the authenticating identity id
+        :param str secret_id: the secret id to be retrieved
+        :return: the retrieved secret metadata dictionary and version tuple
+        :rtype: (dict[str, str], int)
+        """
+        return self.api_client.get_secret_metadata(identity_id, secret_id)
+
+    def add_secret_metadata(self, identity_id, secret_id, version, metadata):
+        """
+        Adds metadata to the given secret. The version number is required for
+        optimistic locking on concurrent updates. An attempt to update metadata
+        with outdated version will be rejected by the server.
+
+        :param str identity_id: the authenticating identity id
+        :param str secret_id: the secret id
+        :param version: the version number of the metadata being updated
+        :type version: long
+        :param metadata: a map of metadata key and value pairs
+        :type metadata: dict[str, str]
+        """
+        existing_metadata, existing_version = \
+            self.get_secret_metadata(identity_id, secret_id)
+
+        updated_metadata = existing_metadata.copy()
+        updated_metadata.update(metadata)
+
+        self.api_client.update_secret_metadata(identity_id, secret_id,
+                                               updated_metadata, version)
+
 
 class Identity:
     """
