@@ -510,7 +510,7 @@ class Secret:
     def get_events(self, rsa_key_owner_id=None):
         """
         Gets a list of events associated filtered by this secret id or
-        RSA key owner or both this secret id and RSA key owner.
+        both this secret id and RSA key owner.
 
         The credentials of the secret creator must be present in the local
         key store.
