@@ -350,7 +350,7 @@ class ApiClient:
     def get_events(self, requestor_id, secret_id=None, rsa_key_owner_id=None):
         """
         Gets a list of events associated filtered by secret id or RSA key owner
-        or both secret id and RSA key owner
+        or both secret id and RSA key owner.
 
         :param str requestor_id: the authenticating identity id
         :param secret_id: the secret id of interest

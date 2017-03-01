@@ -130,7 +130,7 @@ class Client:
     def get_events(self, identity_id, secret_id=None, rsa_key_owner_id=None):
         """
         Gets a list of events associated filtered by secret id or RSA key owner
-        or both secret id and RSA key owner
+        or both secret id and RSA key owner.
 
         :param str identity_id: the authenticating identity id
         :param secret_id: the secret id of interest
@@ -554,12 +554,18 @@ class EncryptionDetails:
 
 
 class EventDetails(namedtuple("EventDetails", [
-    "base_secret_id",
-    "requestor_id",
-    "rsa_key_owner_id",
-    "secret_id",
+    "base_secret_id", "requestor_id", "rsa_key_owner_id", "secret_id",
     "secret_owner_id"
 ])):
+    """
+    This class describes the details of an event related to a secret.
+    Information includes the secret id, the owner identity id of the secret, and
+    the identity id triggering the event.
+
+    Additional information such as base secret id and
+    RSA key owner id are also available for derived secrets.
+    """
+
     def __init__(self, base_secret_id, requestor_id, rsa_key_owner_id,
                  secret_id, secret_owner_id):
         """
@@ -578,7 +584,7 @@ class Event:
     """
     An instance of this class encapsulates an event in Covata Delta. An
     event is an audit entry representing an action undertaken by an
-    identity on a secret
+    identity on a secret.
     """
 
     def __init__(self,
@@ -595,7 +601,7 @@ class Event:
         :type event_details: :class:`~.EventDetails`
         :param str host: the host address
         :param str id: the identifier of the event object
-        :param str source_ip: the source ip
+        :param str source_ip: the source IP address
         :param timestamp: the timestamp of the event
         :type timestamp: datetime
         :param str event_type: the type of the event
