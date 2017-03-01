@@ -36,6 +36,7 @@ across networks, and organisations.
     identity
     secret
     encryption_details
+    event
     api
     crypto
     keystore

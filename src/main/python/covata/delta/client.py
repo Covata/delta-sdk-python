@@ -138,7 +138,7 @@ class Client:
         :param rsa_key_owner_id: the rsa key owner id of interest
         :type rsa_key_owner_id: str | None
         :return: a list of audit events
-        :rtype: list[Event]
+        :rtype: list[:class:`~.Event`]
         """
         events = self.api_client.get_events(
             identity_id, secret_id, rsa_key_owner_id)
@@ -388,7 +388,7 @@ class Identity:
         :param rsa_key_owner_id: the rsa key owner id of interest
         :type rsa_key_owner_id: str | None
         :return: a list of audit events
-        :rtype: list[Event]
+        :rtype: list[:class:`~.Event`]
         """
         return self.parent.get_events(self.id, secret_id, rsa_key_owner_id)
 
@@ -518,7 +518,7 @@ class Secret:
         :param rsa_key_owner_id: the rsa key owner id of interest
         :type rsa_key_owner_id: str | None
         :return: a list of audit events
-        :rtype: list[Event]
+        :rtype: list[:class:`~.Event`]
         """
         return self.parent.get_events(self.created_by, self.id,
                                       rsa_key_owner_id)
@@ -553,12 +553,25 @@ class EncryptionDetails:
         return self.__initialisation_vector
 
 
-EventDetails = namedtuple("EventDetails", [
+class EventDetails(namedtuple("EventDetails", [
     "base_secret_id",
     "requestor_id",
     "rsa_key_owner_id",
     "secret_id",
-    "secret_owner_id"])
+    "secret_owner_id"
+])):
+    def __init__(self, base_secret_id, requestor_id, rsa_key_owner_id,
+                 secret_id, secret_owner_id):
+        """
+        Creates an instance of event details.
+
+        :param str base_secret_id: the id of the base secret
+        :param str requestor_id: the id of the requesting identity
+        :param str rsa_key_owner_id: the id of the RSA key owner
+        :param str secret_id: the id of the secret
+        :param str secret_owner_id: the id of the secret owner
+        """
+        super(EventDetails, self).__init__()
 
 
 class Event:
@@ -583,9 +596,9 @@ class Event:
         :param str host: the host address
         :param str id: the identifier of the event object
         :param str source_ip: the source ip
-        :param timestamp: the timestamp
+        :param timestamp: the timestamp of the event
         :type timestamp: datetime
-        :param str event_type:
+        :param str event_type: the type of the event
         """
         self.__event_details = event_details
         self.__host = host
