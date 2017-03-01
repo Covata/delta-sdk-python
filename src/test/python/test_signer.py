@@ -17,7 +17,6 @@ from covata.delta import signer
 import json
 import re
 from datetime import datetime
-import six.moves.urllib as urllib
 from freezegun import freeze_time
 
 SIGNING_ALGORITHM = "CVT1-RSA4096-SHA256"
@@ -90,12 +89,11 @@ def test_uri_endoing(url, expected_encoded_url):
 
 @freeze_time()
 def test_signature_material():
-    cvt_date = datetime.utcnow().strftime(CVT_DATE_FORMAT)
+    expected_cvt_date_value = datetime.utcnow().strftime(CVT_DATE_FORMAT)
     method = "POST"
     url = "https://delta.covata.io/v1/secrets?hello=w+orld"
     headers = {
         "Content-Type": "application/json",
-        "Cvt-Date": cvt_date
     }
     payload = \
         b"""
@@ -109,32 +107,33 @@ def test_signature_material():
         }
         """
 
-    url_parsed = urllib.parse.urlparse(url)
-    uri = signer.__encode_uri("/".join(url_parsed.path.split("/")[2:]))
-    query = url_parsed.query.replace("+", "%20")
-    canonical_headers = 'content-type:application/json\n cvt-date:' \
-                        + cvt_date
+    uri = "/secrets/"
+    query = "hello=w%20orld"
+    expected_content_type = 'application/json'
+    canonical_headers = "content-type:{}\n cvt-date:{}".format(
+        expected_content_type, expected_cvt_date_value)
     signed_headers = 'content-type;cvt-date'
     hashed_payload = \
         '758ffa295b9a475f04aef51abd60563dabb8df1988cf6d62b9298b1d5ba6b8bf'
     expected_canonical_request = "\n".join(
         [method, uri, query, canonical_headers, signed_headers, hashed_payload])
-    expected_content_type = 'application/json'
-    expected_cvt_date_value = cvt_date
-    materials_from_signer = \
+    expected_headers = {"Content-Type": expected_content_type,
+        "Cvt-Date": expected_cvt_date_value
+    }
+    materials = \
         signer.__get_signature_materials(method, url, headers, payload)
 
-    assert materials_from_signer.method is method
-    assert materials_from_signer.uri == uri
-    assert materials_from_signer.headers_ == headers
-    assert materials_from_signer.query_params == query
-    assert materials_from_signer.canonical_headers == canonical_headers
-    assert materials_from_signer.canonical_request in expected_canonical_request
-    assert materials_from_signer.signed_headers == signed_headers
-    assert materials_from_signer.hashed_payload == hashed_payload
-    assert materials_from_signer.headers_['Content-Type'] is \
+    assert materials.method == method
+    assert materials.uri == uri
+    assert materials.headers_ == expected_headers
+    assert materials.query_params == query
+    assert materials.canonical_headers == canonical_headers
+    assert materials.canonical_request == expected_canonical_request
+    assert materials.signed_headers == signed_headers
+    assert materials.hashed_payload == hashed_payload
+    assert materials.headers_['Content-Type'] == \
            expected_content_type
-    assert materials_from_signer.headers_[
+    assert materials.headers_[
                'Cvt-Date'] == expected_cvt_date_value
 
 
