@@ -461,10 +461,21 @@ def test_construct_signer(mocker, api_client, key_store, private_key):
     get_private_signing_key = mocker.patch.object(
         key_store, 'get_private_signing_key', return_value=private_key)
     signer = api_client.signer("mock_id")
-
     r = requests.Request(url='https://test.com/stage/resource',
                          method='POST',
                          headers=dict(someKey="some value"),
-                         json=dict(content="abcd"))
-    signer(r.prepare())
+                         json=dict(content="abcd")) \
+        .prepare()
+    headers = dict(r.headers)
+    get_updated_headers = mocker.patch(
+        "covata.delta.signer.get_updated_headers",
+        return_value=mocker.Mock())
+    signer(r)
     get_private_signing_key.assert_called_once_with("mock_id")
+    get_updated_headers.assert_called_once_with(
+        identity_id="mock_id",
+        method=r.method,
+        url=r.url,
+        headers=headers,
+        payload=r.body,
+        private_signing_key=private_key)
