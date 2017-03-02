@@ -70,6 +70,12 @@ def test_share_with(secret, identity_b, client):
                                            secret.id)
 
 
+def test_get_metadata(secret, client):
+    client.get_secret_metadata.return_value = {}, 1
+    secret.get_metadata()
+    client.get_secret_metadata.assert_called_with(secret.created_by, secret.id)
+
+
 @pytest.mark.parametrize("rsa_key_owner_id", [None, "rsa-key-owner-id"])
 def test_get_events(secret, rsa_key_owner_id, client):
     secret.get_events(rsa_key_owner_id)

@@ -255,7 +255,7 @@ class ApiClient:
             auth=self.signer(requestor_id))
 
         response.raise_for_status()
-        metadata = response.json()
+        metadata = dict(response.json())
         version = int(response.headers["ETag"])
         return metadata, version
 
@@ -280,6 +280,7 @@ class ApiClient:
         return response.text
 
     @utils.check_id("requestor_id, secret_id")
+    @utils.check_metadata("metadata")
     def update_secret_metadata(self,
                                requestor_id,
                                secret_id,
@@ -346,7 +347,7 @@ class ApiClient:
     @utils.check_arguments(
         "secret_id, rsa_key_owner_id",
         lambda x: x is None or str(x) is not "",
-        "must be a nonempty string")
+        "must be a non-empty string")
     def get_events(self, requestor_id, secret_id=None, rsa_key_owner_id=None):
         """
         Gets a list of events associated filtered by secret id or RSA key owner
