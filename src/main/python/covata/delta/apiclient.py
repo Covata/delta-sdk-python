@@ -280,6 +280,7 @@ class ApiClient:
         return response.text
 
     @utils.check_id("requestor_id, secret_id")
+    @utils.check_metadata("metadata")
     def update_secret_metadata(self,
                                requestor_id,
                                secret_id,

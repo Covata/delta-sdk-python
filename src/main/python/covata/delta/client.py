@@ -313,7 +313,9 @@ class Client:
         """
         Adds metadata to the given secret. The version number is required for
         optimistic locking on concurrent updates. An attempt to update metadata
-        with outdated version will be rejected by the server.
+        with outdated version will be rejected by the server. Passing in an
+        empty metadata map will result in no changes to the metadata or
+        version number.
 
         :param str identity_id: the authenticating identity id
         :param str secret_id: the secret id
@@ -565,6 +567,19 @@ class Secret:
         """
         return self.parent.get_events(self.created_by, self.id,
                                       rsa_key_owner_id)
+
+    def get_metadata(self):
+        """
+        Gets the metadata for this secret. Metadata are key-value pairs of
+        strings that can be added to a secret to facilitate description and
+        lookup. Secrets can support any number of metadata elements, but each
+        key or value has a limit of 256 characters.
+
+        :return: the metadata for this secret
+        """
+        metadata, version = self.parent.get_secret_metadata(self.created_by,
+                                                            self.id)
+        return metadata
 
     def __repr__(self):
         return "{cls}(id={id})".format(cls=self.__class__.__name__, id=self.id)
