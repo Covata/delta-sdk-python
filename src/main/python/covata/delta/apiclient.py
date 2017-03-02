@@ -117,10 +117,7 @@ class ApiClient:
         return identity
 
     @utils.check_id("requestor_id")
-    @utils.check_arguments(
-        "page, page_size",
-        lambda x: x is None or int(x) > 0,
-        "must be a non-zero positive integer")
+    @utils.check_optional_pagination("page, page_size")
     @utils.check_arguments(
         "metadata",
         lambda x: x is not None and dict(x),
@@ -396,10 +393,7 @@ class ApiClient:
 
     @utils.check_id("requestor_id")
     @utils.check_optional_id("base_secret_id, created_by, rsa_key_owner_id")
-    @utils.check_arguments(
-        "page, page_size",
-        lambda x: x is None or int(x) > 0,
-        "must be a non-zero positive integer")
+    @utils.check_optional_pagination("page, page_size")
     @utils.check_arguments(
         "metadata",
         lambda x: x is None or dict(x),
