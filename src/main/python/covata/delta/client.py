@@ -576,6 +576,7 @@ class Secret:
         key or value has a limit of 256 characters.
 
         :return: the metadata for this secret
+        :rtype: dict[str, str]
         """
         metadata, version = self.parent.get_secret_metadata(self.created_by,
                                                             self.id)
