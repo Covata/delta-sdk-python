@@ -20,7 +20,7 @@ import requests
 import responses
 from six.moves import urllib
 
-from covata.delta import ApiClient
+from covata.delta import ApiClient, SecretLookupType
 from covata.delta import crypto
 
 
@@ -451,6 +451,122 @@ def test_get_events__should__fail_when_id_is_an_empty_string(
     mock_signer.assert_not_called()
     assert len(responses.calls) == 0
     assert "must be a non-empty string" in str(excinfo.value)
+
+
+@responses.activate
+@pytest.mark.parametrize(
+    "requestor_id, base_secret_id, created_by, rsa_key_owner_id, metadata, "
+    "lookup_type, page, page_size", [
+        (None, None, None, None, None, SecretLookupType.any, None, None),
+        ("1", "", None, None, None, SecretLookupType.any, None, None),
+        ("1", "1", "", None, None, SecretLookupType.any, None, None),
+        ("1", "1", "1", "", None, SecretLookupType.any, None, None),
+        ("1", "1", "1", "1", {}, SecretLookupType.any, None, None),
+        ("1", "1", "1", "1", {"a": "b"}, 1, None, None),
+        ("1", "1", "1", "1", {"a": "b"}, "any", None, None),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, "", None),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, -1, None),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, "-1", None),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, 0, None),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, 1, ""),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, 1, "-1"),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, 1, -10),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, 1, 0),
+])
+def test_get_events__should__fail_on_invalid_parameter(
+        api_client, mock_signer, requestor_id,
+        base_secret_id, created_by, rsa_key_owner_id, metadata,
+        lookup_type, page, page_size):
+    with pytest.raises(ValueError):
+        api_client.get_secrets(
+            requestor_id=requestor_id,
+            base_secret_id=base_secret_id,
+            created_by=created_by,
+            rsa_key_owner_id=rsa_key_owner_id,
+            metadata=metadata,
+            lookup_type=lookup_type,
+            page=page,
+            page_size=page_size)
+    mock_signer.assert_not_called()
+    assert len(responses.calls) == 0
+
+
+@responses.activate
+@pytest.mark.parametrize("base_secret_id", [None, str(uuid.uuid4())])
+@pytest.mark.parametrize("created_by", [None, str(uuid.uuid4())])
+@pytest.mark.parametrize("rsa_key_owner_id", [None, str(uuid.uuid4())])
+@pytest.mark.parametrize("metadata", [None, dict(key="value")])
+@pytest.mark.parametrize("lookup_type", [
+    SecretLookupType.any, SecretLookupType.derived, SecretLookupType.base])
+@pytest.mark.parametrize("page", [None, 1])
+@pytest.mark.parametrize("page_size", [None, 1])
+def test_get_secrets(api_client, mock_signer, base_secret_id, created_by,
+                     rsa_key_owner_id, metadata, lookup_type, page, page_size):
+    requestor_id = str(uuid.uuid4())
+    secret_id = str(uuid.uuid4())
+
+    if lookup_type is SecretLookupType.derived \
+            or lookup_type is SecretLookupType.any:
+        base_secret_ = base_secret_id if base_secret_id is not None \
+            else str(uuid.uuid4())
+    else:
+        base_secret_ = None
+
+    expected_json = [
+        {'baseSecret': base_secret_,
+         'created': '2017-03-02T00:04:24Z',
+         'createdBy': requestor_id if created_by is None else created_by,
+         'href': 'https://delta.covata.io/v1/secrets/{}'.format(secret_id),
+         'id': secret_id,
+         'metadata': {} if metadata is None else dict(metadata),
+         'rsaKeyOwner': str(uuid.uuid4()) if rsa_key_owner_id is None
+            else rsa_key_owner_id
+         }]
+    responses.add(
+        responses.GET,
+        "{base_path}{resource}".format(
+            base_path=ApiClient.DELTA_URL,
+            resource=ApiClient.RESOURCE_SECRETS),
+        json=expected_json)
+
+    response = api_client.get_secrets(
+        requestor_id=requestor_id,
+        base_secret_id=base_secret_id,
+        created_by=created_by,
+        rsa_key_owner_id=rsa_key_owner_id,
+        metadata=metadata,
+        lookup_type=lookup_type,
+        page=page,
+        page_size=page_size)
+
+    mock_signer.assert_called_once_with(requestor_id)
+
+    assert len(responses.calls) == 1
+    assert response == expected_json
+    url = urllib.parse.urlparse(responses.calls[0].request.url)
+    query_params = dict(urllib.parse.parse_qsl(url.query))
+
+    expected_query_params = dict(
+        page=str(page) if page else None,
+        pageSize=str(page_size) if page_size else None,
+        baseSecret=None if base_secret_id is None else str(base_secret_id),
+        createdBy=None if created_by is None else str(created_by),
+        rsaKeyOwner=None if rsa_key_owner_id is None else str(
+            rsa_key_owner_id))
+
+    if metadata is not None:
+        metadata_ = dict(("metadata." + k, v) for k, v in metadata.items())
+        expected_query_params.update(metadata_)
+
+    if lookup_type is SecretLookupType.base:
+        expected_query_params["baseSecret"] = "false"
+    elif lookup_type is SecretLookupType.derived:
+        expected_query_params["baseSecret"] = "true"
+
+    expected_query_params = dict(
+        (k, v) for k, v in expected_query_params.items() if v is not None)
+
+    assert query_params == expected_query_params
 
 
 def test_construct_signer(mocker, api_client, key_store, private_key):

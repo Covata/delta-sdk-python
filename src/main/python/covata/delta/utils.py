@@ -40,3 +40,15 @@ def check_metadata(arguments):
     return check_arguments(arguments,
                            lambda x: x is not None,
                            "must be a non-empty dict[str, str]")
+
+
+def check_optional_id(arguments):
+    return check_arguments(arguments,
+                           lambda x: x is None or str(x) is not "",
+                           "must be a non-empty string")
+
+
+def check_optional_pagination(arguments):
+    return check_arguments(arguments,
+                           lambda x: x is None or int(x) > 0,
+                           "must be a non-zero positive integer")

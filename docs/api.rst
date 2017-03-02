@@ -19,3 +19,6 @@ API Client
 
 .. autoclass:: ApiClient
    :members:
+
+.. autoclass:: SecretLookupType
+   :members:
