@@ -64,7 +64,7 @@ def test_store_keys__should__fail_when_id_is_invalid(
         fs_key_store, private_key, id):
     with pytest.raises(ValueError) as excinfo:
         fs_key_store.store_keys(id, private_key, private_key)
-    expected = "identity_id must be a nonempty string"
+    expected = "identity_id must be a non-empty string"
     assert expected in str(excinfo.value)
 
 
@@ -73,7 +73,7 @@ def test_get_signing_key__should__fail_when_id_is_invalid(
         fs_key_store, id):
     with pytest.raises(ValueError) as excinfo:
         fs_key_store.get_private_signing_key(id)
-    expected = "identity_id must be a nonempty string"
+    expected = "identity_id must be a non-empty string"
     assert expected in str(excinfo.value)
 
 
@@ -82,5 +82,5 @@ def test_get_encryption_key__should__fail_when_id_is_invalid(
         fs_key_store, id):
     with pytest.raises(ValueError) as excinfo:
         fs_key_store.get_private_encryption_key(id)
-    expected = "identity_id must be a nonempty string"
+    expected = "identity_id must be a non-empty string"
     assert expected in str(excinfo.value)
