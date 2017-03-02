@@ -470,6 +470,39 @@ class Identity:
         """
         return self.parent.get_events(self.id, secret_id, rsa_key_owner_id)
 
+    def get_secrets(self,
+                    base_secret_id=None,
+                    created_by=None,
+                    rsa_key_owner_id=None,
+                    metadata=None,
+                    lookup_type=apiclient.SecretLookupType.any,
+                    page=None,
+                    page_size=None):
+        """
+        Gets a list of secrets based on the query parameters, bound by the
+        pagination parameters.
+
+        :param base_secret_id: the id of the base secret
+        :type base_secret_id: str | None
+        :param created_by: the id of the secret creator
+        :type created_by: str | None
+        :param rsa_key_owner_id: the id of the RSA key owner
+        :type rsa_key_owner_id: str | None
+        :param metadata: the metadata associated with the secret
+        :type metadata: dict[str, str] | None
+        :param lookup_type: the type of the lookup query
+        :type lookup_type: :class:`~.SecretLookupType`
+        :param page: the page number
+        :type page: int | None
+        :param page_size: the page size
+        :type page_size: int | None
+        :return: a generator of secrets satisfying the search criteria
+        :rtype: generator of :class:`~.Secret`
+        """
+        return self.parent.get_secrets(
+            self.id, base_secret_id, created_by, rsa_key_owner_id,
+            metadata, lookup_type, page, page_size)
+
     def create_secret(self, content):
         """
         Creates a new secret in Delta with the given contents.
