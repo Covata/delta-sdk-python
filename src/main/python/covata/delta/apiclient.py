@@ -431,7 +431,8 @@ class ApiClient:
         :type page: int | None
         :param page_size: the page size
         :type page_size: int | None
-        :return:
+        :return: a list of secrets satisfying the search criteria
+        :rtype: list[dict[str, any]]
         """
         params = dict(
             page=int(page) if page else None,
