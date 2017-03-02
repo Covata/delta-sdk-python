@@ -421,7 +421,7 @@ class ApiClient:
         Gets a list of secrets based on the query parameters, bound by the
         pagination parameters.
 
-        :param str requestor_id:
+        :param str requestor_id: the authenticating identity id
         :param base_secret_id: the id of the base secret
         :type base_secret_id: str | None
         :param created_by: the id of the secret creator
