@@ -458,6 +458,44 @@ def test_get_events__should__fail_when_id_is_an_empty_string(
 
 
 @responses.activate
+@pytest.mark.parametrize(
+    "requestor_id, base_secret_id, created_by, rsa_key_owner_id, metadata, "
+    "lookup_type, page, page_size", [
+        (None, None, None, None, None, SecretLookupType.any, None, None),
+        ("1", "", None, None, None, SecretLookupType.any, None, None),
+        ("1", "1", "", None, None, SecretLookupType.any, None, None),
+        ("1", "1", "1", "", None, SecretLookupType.any, None, None),
+        ("1", "1", "1", "1", {}, SecretLookupType.any, None, None),
+        ("1", "1", "1", "1", {"a": "b"}, 1, None, None),
+        ("1", "1", "1", "1", {"a": "b"}, "any", None, None),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, "", None),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, -1, None),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, "-1", None),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, 0, None),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, 1, ""),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, 1, "-1"),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, 1, -10),
+        ("1", "1", "1", "1", {"a": "b"}, SecretLookupType.any, 1, 0),
+])
+def test_get_events__should__fail_on_invalid_parameter(
+        api_client, mock_signer, requestor_id,
+        base_secret_id, created_by, rsa_key_owner_id, metadata,
+        lookup_type, page, page_size):
+    with pytest.raises(ValueError):
+        api_client.get_secrets(
+            requestor_id=requestor_id,
+            base_secret_id=base_secret_id,
+            created_by=created_by,
+            rsa_key_owner_id=rsa_key_owner_id,
+            metadata=metadata,
+            lookup_type=lookup_type,
+            page=page,
+            page_size=page_size)
+    mock_signer.assert_not_called()
+    assert len(responses.calls) == 0
+
+
+@responses.activate
 @pytest.mark.parametrize("base_secret_id", [None, str(uuid.uuid4())])
 @pytest.mark.parametrize("created_by", [None, str(uuid.uuid4())])
 @pytest.mark.parametrize("rsa_key_owner_id", [None, str(uuid.uuid4())])
