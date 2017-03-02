@@ -283,10 +283,33 @@ def test_delete_secret(client, api_client, identity_id, secret_id):
     api_client.delete_secret.assert_called_with(identity_id, secret_id)
 
 
+@pytest.mark.parametrize("identity_id", [None, str(uuid.uuid4())])
+@pytest.mark.parametrize("secret_id", [None, str(uuid.uuid4())])
+def test_get_secret_metadata(client, api_client, identity_id, secret_id):
+    client.get_secret_metadata(identity_id, secret_id)
+    api_client.get_secret_metadata.assert_called_with(identity_id, secret_id)
+
+
+@pytest.mark.parametrize("identity_id", [str(uuid.uuid4())])
+@pytest.mark.parametrize("secret_id", [str(uuid.uuid4())])
+@pytest.mark.parametrize("metadata", [{"a": "b"}])
+def test_add_secret_metadata(client, api_client, identity_id, secret_id,
+                             metadata):
+    existing = {"c": "d"}
+    expected = existing.copy()
+    expected.update(metadata)
+    api_client.get_secret_metadata.return_value = existing, 1
+    client.add_secret_metadata(identity_id, secret_id, 1, metadata)
+    api_client.update_secret_metadata.assert_called_with(
+        identity_id,
+        secret_id,
+        expected,
+        1)
+
+
 @pytest.mark.parametrize("secret_id", [None, str(uuid.uuid4())])
 @pytest.mark.parametrize("rsa_key_owner_id", [None, str(uuid.uuid4())])
-def test_get_events(client, api_client,
-                    secret_id, rsa_key_owner_id):
+def test_get_events(client, api_client, secret_id, rsa_key_owner_id):
     identity_id = str(uuid.uuid4())
     inputs = {}
     if secret_id is not None:

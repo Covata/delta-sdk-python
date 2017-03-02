@@ -33,13 +33,19 @@ def check_arguments(arguments, validation_function, fail_message):
 def check_id(arguments):
     return check_arguments(arguments,
                            lambda x: x is not None and str(x) is not "",
-                           "must be a nonempty string")
+                           "must be a non-empty string")
+
+
+def check_metadata(arguments):
+    return check_arguments(arguments,
+                           lambda x: x is not None,
+                           "must be a non-empty dict[str, str]")
 
 
 def check_optional_id(arguments):
     return check_arguments(arguments,
                            lambda x: x is None or str(x) is not "",
-                           "must be a nonempty string")
+                           "must be a non-empty string")
 
 
 def check_optional_pagination(arguments):

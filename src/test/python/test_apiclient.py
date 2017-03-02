@@ -169,25 +169,21 @@ def test_share_secret(api_client, mock_signer):
 
 
 @responses.activate
-def test_update_secret_metadata(api_client, mock_signer):
+@pytest.mark.parametrize("metadata", [{}, dict(metadata_key="metadata value")])
+def test_update_secret_metadata(api_client, mock_signer, metadata):
     responses.add(responses.PUT,
                   "{base_path}{resource}/{secret_id}/metadata".format(
                       base_path=ApiClient.DELTA_URL,
                       resource=ApiClient.RESOURCE_SECRETS,
                       secret_id="mock_id"),
                   status=204)
-
-    metadata = dict(metadata_key="metadata value")
     api_client.update_secret_metadata(requestor_id="requestor_id",
                                       secret_id="mock_id",
                                       metadata=metadata,
                                       version=1)
-
     mock_signer.assert_called_once_with("requestor_id")
-
     assert len(responses.calls) == 1
     assert responses.calls[0].request.headers["if-match"] == str(1)
-
     request_json = json.loads(responses.calls[0].request.body.decode("utf-8"))
     assert request_json == metadata
 
@@ -454,7 +450,7 @@ def test_get_events__should__fail_when_id_is_an_empty_string(
         api_client.get_events(requestor_id, secret_id, rsa_key_owner_id)
     mock_signer.assert_not_called()
     assert len(responses.calls) == 0
-    assert "must be a nonempty string" in str(excinfo.value)
+    assert "must be a non-empty string" in str(excinfo.value)
 
 
 @responses.activate
