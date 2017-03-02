@@ -16,7 +16,7 @@ from __future__ import absolute_import
 
 from base64 import b64encode, b64decode
 
-from . import crypto
+from . import crypto, apiclient
 from collections import namedtuple
 from datetime import datetime
 
@@ -209,6 +209,49 @@ class Client:
                           response["encryptionDetails"]["initialisationVector"]
                       ),
                       response.get("baseSecretId"))
+
+    def get_secrets(self,
+                    identity_id,
+                    base_secret_id=None,
+                    created_by=None,
+                    rsa_key_owner_id=None,
+                    metadata=None,
+                    lookup_type=apiclient.SecretLookupType.any,
+                    page=None,
+                    page_size=None):
+        """
+        Gets a list of secrets based on the query parameters, bound by the
+        pagination parameters.
+
+        :param str identity_id: the authenticating identity id
+        :param base_secret_id: the id of the base secret
+        :type base_secret_id: str | None
+        :param created_by: the id of the secret creator
+        :type created_by: str | None
+        :param rsa_key_owner_id: the id of the RSA key owner
+        :type rsa_key_owner_id: str | None
+        :param metadata: the metadata associated with the secret
+        :type metadata: dict[str, str] | None
+        :param lookup_type: the type of the lookup query
+        :type lookup_type: :class:`~.SecretLookupType`
+        :param page: the page number
+        :type page: int | None
+        :param page_size: the page size
+        :type page_size: int | None
+        :return: a list of secrets satisfying the search criteria
+        :rtype: list[:class:`~.Secret`]
+        """
+        secrets = self.api_client.get_secrets(
+            identity_id, base_secret_id, created_by, rsa_key_owner_id,
+            metadata, lookup_type, page, page_size)
+        for secret in secrets:
+            yield Secret(self,
+                         id=secret["id"],
+                         created=secret["created"],
+                         rsa_key_owner=secret.get("rsaKeyOwner"),
+                         created_by=secret["createdBy"],
+                         encryption_details=None,
+                         base_secret_id=secret.get("baseSecret"))
 
     def get_secret_content_encrypted(self, identity_id, secret_id):
         """
