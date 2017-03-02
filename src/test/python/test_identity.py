@@ -14,7 +14,7 @@
 
 import pytest
 import uuid
-from covata.delta import Identity
+from covata.delta import Identity, SecretLookupType
 
 
 @pytest.fixture(scope="function")
@@ -80,6 +80,20 @@ def test_get_events(identity_a, client, secret_id, rsa_key_owner_id):
     identity_a.get_events(secret_id, rsa_key_owner_id)
     client.get_events.assert_called_with(identity_a.id, secret_id,
                                          rsa_key_owner_id)
+
+
+def test_get_secrets(identity_a, client):
+    rsa_key_owner_id = str(uuid.uuid4())
+    base_secret_id = str(uuid.uuid4())
+    created_by = str(uuid.uuid4())
+    metadata = dict(key="value")
+    identity_a.get_secrets(
+        base_secret_id, created_by, rsa_key_owner_id, metadata,
+        SecretLookupType.any, page=1, page_size=1)
+
+    client.get_secrets.assert_called_with(
+        identity_a.id, base_secret_id, created_by, rsa_key_owner_id, metadata,
+        SecretLookupType.any, 1, 1)
 
 
 def test_repr(identity_a, identity_b):

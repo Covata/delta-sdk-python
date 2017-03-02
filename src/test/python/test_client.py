@@ -16,7 +16,7 @@ from base64 import b64encode
 import pytest
 import uuid
 
-from covata.delta import Client, Event, EventDetails, SecretLookupType, Secret
+from covata.delta import Client, EventDetails, SecretLookupType
 from datetime import datetime
 
 
