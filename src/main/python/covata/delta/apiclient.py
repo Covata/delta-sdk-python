@@ -18,6 +18,28 @@ import requests
 
 from . import signer, utils
 
+from enum import Enum
+
+
+class SecretLookupType(Enum):
+    """
+    Enumerates the applicable secret lookup types.
+    """
+    base = 1
+    """
+    Restricts lookup to base secrets.
+    """
+
+    derived = 2
+    """
+    Restricts lookup to derived secrets.
+    """
+
+    any = 3
+    """
+    Perform lookup on both base and derived secrets.
+    """
+
 
 class ApiClient:
     """
@@ -343,10 +365,7 @@ class ApiClient:
         response.raise_for_status()
 
     @utils.check_id("requestor_id")
-    @utils.check_arguments(
-        "secret_id, rsa_key_owner_id",
-        lambda x: x is None or str(x) is not "",
-        "must be a nonempty string")
+    @utils.check_optional_id("secret_id, rsa_key_owner_id")
     def get_events(self, requestor_id, secret_id=None, rsa_key_owner_id=None):
         """
         Gets a list of events associated filtered by secret id or RSA key owner
@@ -370,6 +389,76 @@ class ApiClient:
             url="{base_url}{resource}".format(
                 base_url=self.DELTA_URL,
                 resource=self.RESOURCE_EVENTS),
+            params=params,
+            auth=self.signer(requestor_id))
+        response.raise_for_status()
+        return response.json()
+
+    @utils.check_id("requestor_id")
+    @utils.check_optional_id("base_secret_id, created_by, rsa_key_owner_id")
+    @utils.check_arguments(
+        "page, page_size",
+        lambda x: x is None or int(x) > 0,
+        "must be a non-zero positive integer")
+    @utils.check_arguments(
+        "metadata",
+        lambda x: x is None or dict(x),
+        "must be a non-empty dict[str, str]")
+    @utils.check_arguments(
+        "lookup_type",
+        lambda x: isinstance(x, SecretLookupType),
+        "must be an instance of SecretLookupType")
+    def get_secrets(self,
+                    requestor_id,
+                    base_secret_id=None,
+                    created_by=None,
+                    rsa_key_owner_id=None,
+                    metadata=None,
+                    lookup_type=SecretLookupType.any,
+                    page=None,
+                    page_size=None):
+        """
+        Gets a list of secrets based on the query parameters, bound by the
+        pagination parameters.
+
+        :param str requestor_id:
+        :param base_secret_id: the id of the base secret
+        :type base_secret_id: str | None
+        :param created_by: the id of the secret creator
+        :type created_by: str | None
+        :param rsa_key_owner_id: the id of the RSA key owner
+        :type rsa_key_owner_id: str | None
+        :param metadata: the metadata associated with the secret
+        :type metadata: dict[str, str] | None
+        :param lookup_type: the type of the lookup query
+        :type lookup_type: :class:`~.SecretLookupType`
+        :param page: the page number
+        :type page: int | None
+        :param page_size: the page size
+        :type page_size: int | None
+        :return:
+        """
+        params = dict(
+            page=int(page) if page else None,
+            pageSize=int(page_size) if page_size else None,
+            baseSecret=None if base_secret_id is None else str(base_secret_id),
+            createdBy=None if created_by is None else str(created_by),
+            rsaKeyOwner=None if rsa_key_owner_id is None else str(
+                rsa_key_owner_id))
+
+        if metadata is not None:
+            metadata_ = dict(("metadata." + k, v) for k, v in metadata.items())
+            params.update(metadata_)
+
+        if lookup_type is SecretLookupType.base:
+            params["baseSecret"] = "false"
+        elif lookup_type is SecretLookupType.derived:
+            params["baseSecret"] = "true"
+
+        response = requests.get(
+            url="{base_url}{resource}".format(
+                base_url=self.DELTA_URL,
+                resource=self.RESOURCE_SECRETS),
             params=params,
             auth=self.signer(requestor_id))
         response.raise_for_status()

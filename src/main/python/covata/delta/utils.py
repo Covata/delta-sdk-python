@@ -34,3 +34,9 @@ def check_id(arguments):
     return check_arguments(arguments,
                            lambda x: x is not None and str(x) is not "",
                            "must be a nonempty string")
+
+
+def check_optional_id(arguments):
+    return check_arguments(arguments,
+                           lambda x: x is None or str(x) is not "",
+                           "must be a nonempty string")
