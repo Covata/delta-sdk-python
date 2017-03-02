@@ -373,12 +373,12 @@ def test_get_secrets(client, api_client):
     assert len(secrets) == len(expected_json_response)
 
     for secret, secret_json in zip(secrets, expected_json_response):
-        secret.id = secret_json["id"]
-        secret.base_secret_id = secret_json["baseSecret"]
-        secret.created = secret_json["created"]
-        secret.created_by = secret_json["createdBy"]
-        secret.rsa_key_owner = secret_json["rsaKeyOwner"]
-        secret.encryption_details = None
+        assert secret.id == secret_json["id"]
+        assert secret.base_secret_id == secret_json["baseSecret"]
+        assert secret.created == secret_json["created"]
+        assert secret.created_by == secret_json["createdBy"]
+        assert secret.rsa_key_owner == secret_json["rsaKeyOwner"]
+        assert secret.encryption_details == None
 
     api_client.get_secrets.assert_called_with(
         requestor_id, base_secret_id, requestor_id, rsa_key_owner_id, metadata,

@@ -115,8 +115,8 @@ class Client:
         :type page: int | None
         :param page_size: the page size
         :type page_size: int | None
-        :return: a list of :class:`~.Identity` objects satisfying the request
-        :rtype: list[:class:`~.Identity`]
+        :return: a generator of :class:`~.Identity` satisfying the request
+        :rtype: generator of :class:`~.Identity`
         """
         identities = self.api_client.get_identities_by_metadata(
             identity_id, metadata, page, page_size)
@@ -137,8 +137,8 @@ class Client:
         :type secret_id: str | None
         :param rsa_key_owner_id: the rsa key owner id of interest
         :type rsa_key_owner_id: str | None
-        :return: a list of audit events
-        :rtype: list[:class:`~.Event`]
+        :return: a generator of audit events
+        :rtype: generator of :class:`~.Event`
         """
         events = self.api_client.get_events(
             identity_id, secret_id, rsa_key_owner_id)
@@ -238,8 +238,8 @@ class Client:
         :type page: int | None
         :param page_size: the page size
         :type page_size: int | None
-        :return: a list of secrets satisfying the search criteria
-        :rtype: list[:class:`~.Secret`]
+        :return: a generator of secrets satisfying the search criteria
+        :rtype: generator of :class:`~.Secret`
         """
         secrets = self.api_client.get_secrets(
             identity_id, base_secret_id, created_by, rsa_key_owner_id,
@@ -450,8 +450,8 @@ class Identity:
         :type page: int | None
         :param page_size: the page size
         :type page_size: int | None
-        :return: a list of :class:`~.Identity` objects satisfying the request
-        :rtype: list[:class:`~.Identity`]
+        :return: a generator of :class:`~.Identity` satisfying the request
+        :rtype: generator of [:class:`~.Identity`]
         """
         return self.parent.get_identities_by_metadata(
             self.id, metadata, page, page_size)
@@ -465,8 +465,8 @@ class Identity:
         :type secret_id: str | None
         :param rsa_key_owner_id: the rsa key owner id of interest
         :type rsa_key_owner_id: str | None
-        :return: a list of audit events
-        :rtype: list[:class:`~.Event`]
+        :return: a generator of audit events
+        :rtype: generator of :class:`~.Event`
         """
         return self.parent.get_events(self.id, secret_id, rsa_key_owner_id)
 
@@ -605,8 +605,8 @@ class Secret:
 
         :param rsa_key_owner_id: the rsa key owner id of interest
         :type rsa_key_owner_id: str | None
-        :return: a list of audit events
-        :rtype: list[:class:`~.Event`]
+        :return: a generator of audit events
+        :rtype: generator of :class:`~.Event`
         """
         return self.parent.get_events(self.created_by, self.id,
                                       rsa_key_owner_id)
