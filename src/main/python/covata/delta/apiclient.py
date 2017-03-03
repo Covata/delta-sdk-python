@@ -57,7 +57,7 @@ class ApiClient:
         Constructs a new Delta API client with the given configuration.
 
         :param key_store: the DeltaKeyStore object
-        :type key_store: :class:`DeltaKeyStore`
+        :type key_store: :class:`~.DeltaKeyStore`
         """
         self.__key_store = key_store
 

@@ -644,6 +644,28 @@ class Secret:
         return self.parent.get_events(self.created_by, self.id,
                                       rsa_key_owner_id)
 
+    def get_derived_secrets(self, page=None, page_size=None):
+        """
+        Gets a list of secrets derived from this secret, bound by the pagination
+        parameters.
+
+        The credentials of the secret creator be present in the local
+        key store.
+
+        :param page: the page number
+        :type page: int | None
+        :param page_size: the page size
+        :type page_size: int | None
+
+        :return: a generator of secrets
+        :rtype: generator of :class:`~.Secret`
+        """
+
+        self.parent.get_secrets(requestor_id=self.created_by,
+                                base_secret_id=self.id,
+                                page=page,
+                                page_size=page_size)
+
     def get_metadata(self):
         """
         Gets the metadata for this secret. Metadata are key-value pairs of

@@ -84,5 +84,16 @@ def test_get_events(secret, rsa_key_owner_id, client):
                                          rsa_key_owner_id)
 
 
+@pytest.mark.parametrize("page", [None, 1])
+@pytest.mark.parametrize("page_size", [None, 1])
+def test_get_derived_secret(secret, client, page, page_size):
+    secret.get_derived_secrets(page, page_size)
+    client.get_secrets.assert_called_with(
+        requestor_id=secret.created_by,
+        base_secret_id=secret.id,
+        page=page,
+        page_size=page_size)
+
+
 def test_repr(secret):
     assert str(secret) == "Secret(id={})".format(secret.id)
