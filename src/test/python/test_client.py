@@ -16,7 +16,7 @@ from base64 import b64encode
 import pytest
 import uuid
 
-from covata.delta import Client, Event, EventDetails
+from covata.delta import Client, EventDetails, SecretLookupType
 from datetime import datetime
 
 
@@ -348,3 +348,38 @@ def test_get_events(client, api_client, secret_id, rsa_key_owner_id):
         assert r.timestamp == datetime.strptime(
             expected["timestamp"], "%Y-%m-%dT%H:%M:%S.%fZ")
         assert r.event_type == expected["type"]
+
+
+def test_get_secrets(client, api_client):
+    requestor_id = str(uuid.uuid4())
+    rsa_key_owner_id = str(uuid.uuid4())
+    base_secret_id = str(uuid.uuid4())
+    secret_id = str(uuid.uuid4())
+    metadata = dict(key="value")
+    expected_json_response = [
+        {'baseSecret': base_secret_id,
+         'created': '2017-03-02T00:04:24Z',
+         'createdBy': requestor_id,
+         'href': 'https://delta.covata.io/v1/secrets/{}'.format(secret_id),
+         'id': secret_id,
+         'metadata': metadata,
+         'rsaKeyOwner': rsa_key_owner_id
+         }]
+    api_client.get_secrets.return_value = expected_json_response
+    secrets = list(client.get_secrets(
+        requestor_id, base_secret_id, requestor_id, rsa_key_owner_id, metadata,
+        SecretLookupType.any, page=1, page_size=1))
+
+    assert len(secrets) == len(expected_json_response)
+
+    for secret, secret_json in zip(secrets, expected_json_response):
+        assert secret.id == secret_json["id"]
+        assert secret.base_secret_id == secret_json["baseSecret"]
+        assert secret.created == secret_json["created"]
+        assert secret.created_by == secret_json["createdBy"]
+        assert secret.rsa_key_owner == secret_json["rsaKeyOwner"]
+        assert secret.encryption_details == None
+
+    api_client.get_secrets.assert_called_with(
+        requestor_id, base_secret_id, requestor_id, rsa_key_owner_id, metadata,
+        SecretLookupType.any, 1, 1)
