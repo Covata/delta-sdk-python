@@ -24,10 +24,7 @@ def main():
     will be created as a result of running this example.
     """
     key_store = FileSystemKeyStore("~/keystore/", "passPhrase")
-    api_client = ApiClient(key_store)
-    config = {"key_store": key_store, "api_client": api_client}
-
-    client = Client(config)
+    client = Client(key_store)
 
     identity_a = client.create_identity()
     print("Identity A created; identity id = {}".format(identity_a.id))

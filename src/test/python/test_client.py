@@ -22,8 +22,7 @@ from datetime import datetime
 
 @pytest.fixture(scope="function")
 def client(api_client, key_store):
-    return Client(dict(api_client=api_client,
-                       key_store=key_store))
+    return Client(key_store=key_store, api_client_factory=lambda x: api_client)
 
 
 @pytest.fixture(scope="function")

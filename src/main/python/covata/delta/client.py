@@ -35,15 +35,18 @@ class Client:
     both).
     """
 
-    def __init__(self, config):
+    def __init__(self, key_store, api_client_factory=apiclient.ApiClient):
         """
         Creates a new DeltaClient instance from the provided configuration.
 
-        :param config: the configuration for the client
-        :type config: dict[str, any]
+        :param key_store: the key store
+        :type key_store: :class:`~.DeltaKeyStore`
+        :param api_client_factory: the API client factory
+        :type api_client_factory:
+           (:class:`~.DeltaKeyStore`) -> :class:`~.ApiClient`
         """
-        self.__key_store = config["key_store"]
-        self.__api_client = config["api_client"]
+        self.__key_store = key_store
+        self.__api_client = api_client_factory(key_store)
 
     @property
     def key_store(self):
