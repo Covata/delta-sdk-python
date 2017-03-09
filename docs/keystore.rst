@@ -16,16 +16,34 @@
 Key Store
 =========
 
-The ``DeltaKeyStore`` provides the interface for a key-storage
-backend of choice.
+The management and storage of private keys is the responsibility of the
+client. The ``DeltaKeyStore`` provides the interface for a key-storage
+implementation. The ``FileSystemKeyStore`` is an implementation to store keys
+on PEM formats on the file system.
+
+Retrieval and usage of these keys is required in the following use cases:
+
+- Request Signing - all endpoints requiring authentication will require the
+  private signing key of the requesting identity as part of the CVT1 request
+  signing process.
+
+- Retrieving Secret Content - to retrieve secret content, a client will need
+  access to the secret encryption key, which can only be decrypted with their
+  private decryption key.
+
+The Delta framework does not dictate or impose restrictions on how a client
+should manage and store private keys. It is therefore up to the
+implementation on whether to develop a custom solution or use
+pre-existing solutions, as long as the keys are accessible in the above use
+cases.
 
 .. currentmodule:: covata.delta.keystore
 
 .. autoclass:: DeltaKeyStore
     :members:
 
-File-System KeyStore
---------------------
+File-System Key Store
+---------------------
 
 Implementation of the ``DeltaKeyStore`` abstract base class using the file
 system. Private keys are saved in the file system as encrypted PEM formats
