@@ -32,6 +32,7 @@ across networks, and organisations.
 
     self
     quick_start
+    example_use
     client
     identity
     secret
