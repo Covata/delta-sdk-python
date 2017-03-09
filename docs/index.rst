@@ -41,6 +41,7 @@ across networks, and organisations.
     api
     crypto
     keystore
+    glossary
 
 Indices and tables
 ==================
