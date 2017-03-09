@@ -355,7 +355,7 @@ class Client:
         """
         return self.api_client.get_secret_metadata(identity_id, secret_id)
 
-    def add_secret_metadata(self, identity_id, secret_id, version, metadata):
+    def add_secret_metadata(self, identity_id, secret_id, metadata):
         """
         Adds metadata to the given secret. The version number is required for
         optimistic locking on concurrent updates. An attempt to update metadata
@@ -365,8 +365,6 @@ class Client:
 
         :param str identity_id: the authenticating identity id
         :param str secret_id: the secret id
-        :param version: the version number of the metadata being updated
-        :type version: long
         :param metadata: a map of metadata key and value pairs
         :type metadata: dict[str, str]
         """
@@ -376,8 +374,8 @@ class Client:
         updated_metadata = existing_metadata.copy()
         updated_metadata.update(metadata)
 
-        self.api_client.update_secret_metadata(identity_id, secret_id,
-                                               updated_metadata, version)
+        self.api_client.update_secret_metadata(
+            identity_id, secret_id, updated_metadata, existing_version)
 
 
 class Identity:
@@ -668,6 +666,17 @@ class Secret:
                                 base_secret_id=self.id,
                                 page=page,
                                 page_size=page_size)
+
+    def add_metadata(self, metadata):
+        """
+        Adds the key and value pairs in the provided map as metadata for this
+        secret. If the metadata previously contained a mapping for the key, the
+        old value is replaced by the specified value.
+
+        :param metadata: a map of metadata key and value pairs
+        :type metadata: dict[str, str]
+        """
+        self.parent.add_secret_metadata(self.created_by, self.id, metadata)
 
     def get_metadata(self):
         """
