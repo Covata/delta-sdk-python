@@ -19,7 +19,7 @@ Key Store
 The management and storage of private keys is the responsibility of the
 client. The ``DeltaKeyStore`` provides the interface for a key-storage
 implementation. The ``FileSystemKeyStore`` is an implementation to store keys
-on PEM formats on the file system.
+in PEM formats on the file system.
 
 Retrieval and usage of these keys is required in the following use cases:
 

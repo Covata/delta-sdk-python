@@ -25,6 +25,8 @@ Initialisation
 
 .. code:: python
 
+   from covata.delta import Client, FileSystemKeyStore
+
    key_store = FileSystemKeyStore("~/keystore/", "passPhrase")
    client = Client(key_store)
 
@@ -32,17 +34,17 @@ Initialisation
 Identity
 --------
 
-- Create an identity
+- Creating an identity
 .. code:: python
 
-   from covata import delta
+   from covata.delta import Client, FileSystemKeyStore
 
    key_store = FileSystemKeyStore("~/keystore/", "passPhrase")
    client = Client(key_store)
 
    client.create_identity()
 
-- Get your own identity
+- Getting your own identity
 .. code:: python
 
    from covata import delta
@@ -52,10 +54,10 @@ Identity
 
    identity = client.get_identity("8e91cb8c-1ea5-4b69-bedf-9a14940cce44")
 
-- Get a different identity
+- Getting a different identity
 .. code:: python
 
-   from covata import delta
+   from covata.delta import Client, FileSystemKeyStore
 
    key_store = FileSystemKeyStore("~/keystore/", "passPhrase")
    client = Client(key_store)
@@ -69,10 +71,10 @@ Identity
 Secret
 ------
 
--  Create a base secret
+-  Creating a base secret
 .. code:: python
 
-   from covata import delta
+   from covata.delta import Client, FileSystemKeyStore
 
    key_store = FileSystemKeyStore("~/keystore/", "passPhrase")
    client = Client(key_store)
@@ -85,10 +87,10 @@ Secret
    secret = client.create_secret("8e91cb8c-1ea5-4b69-bedf-9a14940cce44",
                                  "here is my secret")
 
--  Create a base secret with metadata
+-  Creating a base secret with metadata
 .. code:: python
 
-   from covata import delta
+   from covata.delta import Client, FileSystemKeyStore
 
    key_store = FileSystemKeyStore("~/keystore/", "passPhrase")
    client = Client(key_store)
@@ -103,10 +105,10 @@ Secret
    secret = client.create_secret("8e91cb8c-1ea5-4b69-bedf-9a14940cce44",
                                  "here is my secret", metadata)
 
--  Get a base secret and the contents
+-  Getting a base secret and the contents
 .. code:: python
 
-   from covata import delta
+   from covata.delta import Client, FileSystemKeyStore
 
    key_store = FileSystemKeyStore("~/keystore/", "passPhrase")
    client = Client(key_store)
@@ -124,10 +126,10 @@ Secret
     reference = secret.get_metadata("reference number")
 
 
--  Delete a secret
+-  Deleting a secret
 .. code:: python
 
-   from covata import delta
+   from covata.delta import Client, FileSystemKeyStore
 
    # option 1: via secret object
    identity = client.get_identity("8e91cb8c-1ea5-4b69-bedf-9a14940cce44")
