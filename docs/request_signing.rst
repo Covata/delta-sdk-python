@@ -12,6 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
+===============
 Request Signing
 ===============
 
@@ -38,7 +39,7 @@ previous stage):
 Each of these steps are described below.
 
 Step 1. Creating a canonical request
-------------------------------------
+====================================
 
 The canonical request is a representation of the request in a standardised
 (canonical) format that can be procedurally constructed (and reconstructed on
@@ -57,159 +58,313 @@ elements:
 
 These elements are joined together as a single string, delimited by newline
 ('\n') character. The following example shows the pseudocode to create a
-canonical request:
+canonical request::
 
-.. code::
-   CanonicalRequest = HTTPRequestMethod + '\n'
-    + CanonicalURI + '\n'
-    + CanonicalQueryString + '\n'
-    + CanonicalHeaders + '\n'
-    + SignedHeaders + '\n'
-    + HashedPayload
+ CanonicalRequest = HTTPRequestMethod + '\n'
+  + CanonicalURI + '\n'
+  + CanonicalQueryString + '\n'
+  + CanonicalHeaders + '\n'
+  + SignedHeaders + '\n'
+  + HashedPayload
 
 To construct each of these elements, follow the steps below.
+
 Canonical request - constructing the HTTP request method
+--------------------------------------------------------
 This is the HTTP request method (GET, PUT, POST, etc.) in uppercase.
-Example for a POST request:
-POST
+
+Example for a POST request::
+
+ POST
+
 Canonical request - constructing the canonical path
-The canonical path is the absolute path component of the entire URI - that is, everything in the URI from the end of the HTTP host component through to the question mark character ("?") that begins the query string parameters.
-Each such path-segment should be URI-encoded and normalised according to RFC 3986. The absolute path component should be enclosed by an opening and trailing "/".
-A request to the identities endpoint https://delta.covata.io/v1/identities has the following canonical path:
-/identities/
-If the absolute path is empty, simply represent this as a forward slash (/):
-/
-If the canonical path requires encoding, this should be present in the string too:
-/my%20secrets/
+---------------------------------------------------
+
+The canonical path is the absolute path component of the entire URI - that is,
+everything in the URI from the end of the HTTP host component through to the
+question mark character ("?") that begins the query string parameters.
+Each such path-segment should be URI-encoded and normalised according to
+RFC 3986. The absolute path component should be enclosed by an opening and
+trailing "/".
+
+A request to the identities endpoint ``https://delta.covata.io/v1/identities``
+has the following canonical path::
+
+ /identities/
+
+If the absolute path is empty, simply represent this as a forward slash (/)::
+
+ /
+
+If the canonical path requires encoding, this should be present in the string
+too::
+
+ /my%20secrets/
+
 Canonical request - constructing the canonical query string
-The canonical query string consists of the query string, sorted, URI-encoded and normalised according to RFC 3986.
-If the request does not include a query string, use an empty string so that the delimited canonical header will include a blank line between the canonical request and the canonical headers:
-POST
-/identities/
+-----------------------------------------------------------
+The canonical query string consists of the query string, sorted, URI-encoded
+and normalised according to RFC 3986. If the request does not include a query
+string, use an empty string so that the delimited canonical header will include
+a blank line between the canonical request and the canonical headers::
 
-content-type:application/json; charset=utf-8
-...
+ POST
+ /identities/
+
+ content-type:application/json; charset=utf-8
+ ...
+
 To create the canonical query string:
-Sort the parameter names by character code in ascending order (ASCII order). For example, a parameter name that begins with the uppercase letter F (ASCII code 70) precedes a parameter name that begins with a lowercase letter b (ASCII code 98).
-URI-encode each parameter name and value according to the following rules:
-Do not URI-encode any of the unreserved characters that RFC 3986 defines: A-Z, a-z, 0-9, hyphen ( - ), underscore ( _ ), period ( . ), and tilde ( ~ ).
-Percent-encode all other characters with %XY, where X and Y are hexadecimal characters (0-9 and uppercase A-F). For example, the space character must be encoded as %20. Do not include plus symbols ('+'), as some encoding schemes do.
-Extended UTF-8 characters must be in the form %XY%ZA%BC.
-Build the canonical query string by starting with the first parameter name in the sorted list.
-For each parameter, append the URI-encoded parameter name, followed by the character '=' (ASCII code 61), followed by the URI-encoded parameter value. Use an empty string for parameters that have no value.
-Append the character '&' (ASCII code 38) after each parameter value, except for the last value in the list.
-Example of a canonical query string containing a single parameter:
-sampleQueryParamName=sampleQueryParamValue
-Example of a canonical query string containing 2 parameters where the first parameter has no value:
-exampleQueryParamName=&sampleQueryParamName=sampleQueryParamValue
-Canonical request - constructing the canonical headers
-The canonical headers consist of a list of all the HTTP headers that are included with the signed request in a form that Delta can interpret.
-At a minimum, the date header (Cvt-Date) must be included. Standard headers like Content-Type are optional. Be aware that different Delta API endpoints may require other headers.
-To create the list of canonical headers:
-Convert all header names to lowercase and remove leading and trailing spaces.
-Convert sequential/consecutive spaces in the header value to a single space (and remove leading and trailing spaces from these segments).
-Append the lowercase header name with a colon, followed immediately by the value itself. This concatenated string is the canonical header entry.
-Lexicographically, sort all the canonical header entries.
-Join all the canonical header entries, where each entry is delimited by a newline character (' \n') followed by a space.
-The following pseudocode describes how to construct the list of canonical headers:
-CanonicalHeaderEntry = Lowercase(HeaderName)
-	+ ':'
-	+ Trimall(HeaderValue)
-	+ (FinalHeader ? '' : ' \n')
 
-CanonicalHeaders = CanonicalHeaderEntry0
-	+ CanonicalHeaderEntry1
-	+ ...
-	+ CanonicalHeaderEntryN
-(info) Note:
-Lowercase() represents a function that converts all characters in its argument to lowercase.
-Trimall() represents a function that converts all sets of consecutive spaces in its argument's value (including any quoted content) to single spaces.
-The following example shows the original, complex set of headers:
-Host: delta.covata.io
-Content-Type:application/json; charset=utf-8
-My-header1:    a   b   c
-Cvt-Date:20150830T123600Z
-My-Header2:    "a   b   c"
-And the list of headers in their canonical form:
-content-type:application/json; charset=utf-8
- cvt-date:20150830T123600Z
- host:delta.covata.io
- my-header1:a b c
- my-header2:"a b c"
+#. Sort the parameter names by character code in ascending order (ASCII
+   order). For example, a parameter name that begins with the uppercase letter
+   F (ASCII code 70) precedes a parameter name that begins with a lowercase
+   letter b (ASCII code 98).
+#. URI-encode each parameter name and value according to the following rules:
+
+   - Do not URI-encode any of the unreserved characters that RFC 3986 defines:
+     A-Z, a-z, 0-9, hyphen ( - ), underscore ( _ ), period ( . ), and tilde (
+     ~ ).
+   - Percent-encode all other characters with %XY, where X and Y are
+     hexadecimal characters (0-9 and uppercase A-F). For example, the space
+     character must be encoded as %20. Do not include plus symbols ('+'), as
+     some encoding schemes do.
+   - Extended UTF-8 characters must be in the form %XY%ZA%BC.
+#. Build the canonical query string by starting with the first parameter name
+   in the sorted list.
+#. For each parameter, append the URI-encoded parameter name, followed by the
+   character '=' (ASCII code 61), followed by the URI-encoded parameter value.
+   Use an empty string for parameters that have no value.
+#. Append the character '&' (ASCII code 38) after each parameter value, except
+   for the last value in the list.
+
+Example of a canonical query string containing a single parameter::
+
+ sampleQueryParamName=sampleQueryParamValue
+
+Example of a canonical query string containing 2 parameters where the first
+parameter has no value:
+
+exampleQueryParamName=&sampleQueryParamName=sampleQueryParamValue
+
+Canonical request - constructing the canonical headers
+------------------------------------------------------
+
+The canonical headers consist of a list of all the HTTP headers that are
+included with the signed request in a form that Delta can interpret. At a
+minimum, the date header ``Cvt-Date`` must be included. Standard headers like
+Content-Type are optional. Be aware that different Delta API endpoints may
+require other headers.
+
+To create the list of canonical headers:
+
+#. Convert all header names to lowercase and remove leading and trailing spaces.
+#. Convert sequential/consecutive spaces in the header value to a single space
+   (and remove leading and trailing spaces from these segments).
+#. Append the lowercase header name with a colon, followed immediately by the
+   value itself. This concatenated string is the canonical header entry.
+#. Lexicographically, sort all the canonical header entries.
+#. Join all the canonical header entries, where each entry is delimited by a
+   newline character (' \n') followed by a space.
+
+The following pseudocode describes how to construct the list of canonical
+headers::
+
+ CanonicalHeaderEntry = Lowercase(HeaderName)
+  + ':'
+  + Trimall(HeaderValue)
+  + (FinalHeader ? '' : ' \n')
+
+ CanonicalHeaders = CanonicalHeaderEntry0
+  + CanonicalHeaderEntry1
+  + ...
+  + CanonicalHeaderEntryN
+
+Note:
+
+- Lowercase() represents a function that converts all characters in its
+  argument to lowercase.
+- Trimall() represents a function that converts all sets of consecutive spaces
+  in its argument's value (including any quoted content) to single spaces.
+
+The following example shows the original, complex set of headers::
+
+ Host: delta.covata.io
+ Content-Type:application/json; charset=utf-8
+ My-header1:    a   b   c
+ Cvt-Date:20150830T123600Z
+ My-Header2:    "a   b   c"
+
+And the list of headers in their canonical form::
+
+ content-type:application/json; charset=utf-8
+  cvt-date:20150830T123600Z
+  host:delta.covata.io
+  my-header1:a b c
+  my-header2:"a b c"
+
 Canonical request - constructing the signed headers
-The signed headers is the list of headers which are included in the list canonical headers (above).
-The purpose of the signed headers list is to instruct Delta about which headers in the request have been included in the signing process and which headers can be ignored. Such additional headers may be those which are added after the client application has completed the signing process (for instance by a proxy) and therefore, these additional headers would be unknown to the client application making the request.
-Hence, the signed headers list must represent every header included in the list of canonical headers (above).
+---------------------------------------------------
+
+The signed headers is the list of headers which are included in the list
+canonical headers (above).
+The purpose of the signed headers list is to instruct Delta about which headers
+in the request have been included in the signing process and which headers can
+be ignored. Such additional headers may be those which are added after the
+client application has completed the signing process (for instance by a proxy)
+and therefore, these additional headers would be unknown to the client
+application making the request.
+
+Hence, the signed headers list must represent every header included in the list
+of canonical headers (above).
+
 To create the list of signed headers:
-Convert all header names to lowercase.
-Sort the lowercase header names lexicographically.
-Join all the sorted, lowercase headers delimited by a semicolon.
-The following pseudocode describes how to construct the list of signed headers.
-SignedHeaders = Lowercase(HeaderName0) + ';'
-	+ Lowercase(HeaderName1) + ";"
-	+ ...
-	+ Lowercase(HeaderNameN)
-The following example shows a signed header string:
-content-type;cvt-date;host;my-header1;my-header2
+
+- Convert all header names to lowercase.
+- Sort the lowercase header names lexicographically.
+- Join all the sorted, lowercase headers delimited by a semicolon.
+
+The following pseudocode describes how to construct the list of signed headers::
+
+ SignedHeaders = Lowercase(HeaderName0) + ';'
+  + Lowercase(HeaderName1) + ";"
+  + ...
+  + Lowercase(HeaderNameN)
+
+The following example shows a signed header string::
+
+ content-type;cvt-date;host;my-header1;my-header2
+
 Canonical request - constructing the hashed payload
-Use a hash (digest) function like SHA256 to create a hashed value from the body of the request (i.e. the payload). The hashed payload must be represented as a lowercase hexadecimal string.
-All such payloads are contained in a JSON object, whose contents should be sorted and compacted.
-Sorting is performed by member name and must be conducted at all levels of the entire JSON object (i.e. if any member has a value which itself is another JSON object, the contents of this nested JSON object need to be sorted too).
-The compacting process involves removing all spaces outside of everything contained outside quoted strings in the JSON object.
+---------------------------------------------------
+
+Use a hash (digest) function like SHA256 to create a hashed value from the body
+of the request (i.e. the payload). The hashed payload must be represented as a
+lowercase hexadecimal string.
+
+All such payloads are contained in a JSON object, whose contents should be
+sorted and compacted.
+
+- Sorting is performed by member name and must be conducted at all levels of
+  the entire JSON object (i.e. if any member has a value which itself is
+  another JSON object, the contents of this nested JSON object need to be
+  sorted too).
+- The compacting process involves removing all spaces outside of everything
+  contained outside quoted strings in the JSON object.
+
 In summary, to construct the hashed payload:
-Sort all members of every level in the JSON object payload by member name.
-Compact the entire JSON object payload.
-Run a SHA256 function on the compacted payload.
-Encode the results of this function as hexadecimal.
-Ensure that all alphabetical characters in the hexadecimal-encoded result are lowercase.
-For requests with empty payloads (i.e. all GET requests), use the empty JSON object ("{}") as the payload. This should always result in a hashed value of 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a.
-The following example shows a request's JSON object payload, which is unsorted and uncompacted:
-{
-    "signingPublicKey": "E021472BCF554198752798A956DCB5065126D578CCCF632A6BB2BA1EEF7EE685",
-    "cryptoPublicKey": "220418D56A32B5B747EF301E57FA1466C229F03B1B11CC5B7900A996ACF360E8"
-}
-This is what the JSON object payload looks like after sorting and compacting:
-{"cryptoPublicKey":"220418D56A32B5B747EF301E57FA1466C229F03B1B11CC5B7900A996ACF360E8","signingPublicKey":"E021472BCF554198752798A956DCB5065126D578CCCF632A6BB2BA1EEF7EE685"}
-And this is what the payload looks like after hashing with SHA256 and encoding as a lowercase hexadecimal string:
-daadd72c2e2f5b63ad67e2131a598e4a6edcd75d6bc70c36e7e3f3ec5de95417
+
+#. Sort all members of every level in the JSON object payload by member name.
+#. Compact the entire JSON object payload.
+#. Run a SHA256 function on the compacted payload.
+#. Encode the results of this function as hexadecimal.
+#. Ensure that all alphabetical characters in the hexadecimal-encoded result
+   are lowercase.
+
+For requests with empty payloads (i.e. all GET requests), use the empty JSON
+object ("{}") as the payload. This should always result in a hashed value of
+``44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a``.
+
+The following example shows a request's JSON object payload, which is unsorted
+and uncompacted::
+
+ {
+     "signingPublicKey": "E021472BCF554198752798A956DCB5065126D578CCCF632A6BB2BA1EEF7EE685",
+     "cryptoPublicKey": "220418D56A32B5B747EF301E57FA1466C229F03B1B11CC5B7900A996ACF360E8"
+ }
+This is what the JSON object payload looks like after sorting and compacting::
+
+ {"cryptoPublicKey":"220418D56A32B5B747EF301E57FA1466C229F03B1B11CC5B7900A996ACF360E8","signingPublicKey":"E021472BCF554198752798A956DCB5065126D578CCCF632A6BB2BA1EEF7EE685"}
+
+And this is what the payload looks like after hashing with SHA256 and encoding
+as a lowercase hexadecimal string::
+
+ daadd72c2e2f5b63ad67e2131a598e4a6edcd75d6bc70c36e7e3f3ec5de95417
+
 Example canonical request
-To construct the completed canonical request, combine all the components from each step as a single string. As noted (above), each component ends with a newline character.
-An example canonical request string is shown below:
-POST
-/identities/
-sampleQueryParamName=sampleQueryParamValue
-content-type:application/json; charset=utf-8
- cvt-date:20150830T123600Z
- host:delta.covata.io
- my-header1:a b c
- my-header2:"a b c"
-content-type;cvt-date;host;my-header1;my-header2
-daadd72c2e2f5b63ad67e2131a598e4a6edcd75d6bc70c36e7e3f3ec5de95417
+-------------------------
+
+To construct the completed canonical request, combine all the components from
+each step as a single string. As noted (above), each component ends with a
+newline character.
+
+An example canonical request string is shown below::
+
+ POST
+ /identities/
+ sampleQueryParamName=sampleQueryParamValue
+ content-type:application/json; charset=utf-8
+  cvt-date:20150830T123600Z
+  host:delta.covata.io
+  my-header1:a b c
+  my-header2:"a b c"
+ content-type;cvt-date;host;my-header1;my-header2
+ daadd72c2e2f5b63ad67e2131a598e4a6edcd75d6bc70c36e7e3f3ec5de95417
+
 Step 2. Creating a string to sign
-The string to sign is a set of strings representing meta information about the entire request.
-The following pseudocode describes how to create the string to sign, which is a concatenation of the algorithm (representing this CVT1 request signing scheme), the date of the request (which must match the date in the header) and the digest of the canonical request (using SHA256), delimited with the newline ('\n') character, as shown:
-StringToSign = Algorithm
+=================================
+
+The string to sign is a set of strings representing meta information about the
+entire request.
+
+The following pseudocode describes how to create the string to sign, which is
+a concatenation of the algorithm (representing this CVT1 request signing
+scheme), the date of the request (which must match the date in the header) and
+the digest of the canonical request (using SHA256), delimited with the newline
+('\n') character, as shown::
+
+ StringToSign = Algorithm
 	+ '\n' + RequestDate
 	+ '\n' + HashedCanonicalRequest
 
 String to sign - Algorithm
-The designation for the CVT1 request signing scheme algorithm is:
-CVT1-RSA4096-SHA256
+--------------------------
+
+The designation for the CVT1 request signing scheme algorithm is::
+
+ CVT1-RSA4096-SHA256
+
 String to sign - RequestDate
-The request date is the value of the cvt-date header (which is in ISO8601 format YYYYMMDD'T'HHMMSS'Z'). The date/time must be in UTC and does not include milliseconds. This value must match the value you used in relevant previous stages.
-20150830T123600Z
+----------------------------
+
+The request date is the value of the cvt-date header (which is in ISO8601
+format YYYYMMDD'T'HHMMSS'Z'). The date/time must be in UTC and does not include
+milliseconds. This value must match the value you used in relevant previous
+stages.
+
+.. code::
+   20150830T123600Z
+
 String to sign - HashedCanonicalRequest
-The canonical request (see Example canonical request and Stage 1 description above) whose content has been hashed using the SHA256 algorithm.
-cc113fcef267dbbdce8416b1a9a8bcb09a32460142449c3289bc093598a9eef0
-Info (i) The hashed canonical request must be hex-encoded and be lowercase, as defined by Section 8 of RFC 4648.
+---------------------------------------
+
+The canonical request (see Example canonical request and Stage 1 description
+above) whose content has been hashed using the SHA256 algorithm.
+
+.. code::
+   cc113fcef267dbbdce8416b1a9a8bcb09a32460142449c3289bc093598a9eef0
+
+The hashed canonical request must be hex-encoded and be lowercase, as defined
+by Section 8 of RFC 4648.
+
 Example string to sign
-The following is a completed string to sign, with a date of 31st January, 2017 at 12:34.56pm:
-CVT1-RSA4096-SHA256
-20170131T123456Z
-cc113fcef267dbbdce8416b1a9a8bcb09a32460142449c3289bc093598a9eef0
+----------------------
+
+The following is a completed string to sign, with a date of 31st January, 2017
+at 12:34.56pm::
+
+ CVT1-RSA4096-SHA256
+ 20170131T123456Z
+ cc113fcef267dbbdce8416b1a9a8bcb09a32460142449c3289bc093598a9eef0
+
 Step 3. Calculating the signature
+---------------------------------
+
 The final signature is calculated according to the following steps:
-Calculate a SHA256 digest of the string to sign from the previous stage (above). The output must be hex-encoded and be lowercase, as defined by Section 8 of RFC 4648.
+
+#. Calculate a SHA256 digest of the string to sign from the previous stage
+   (above). The output must be hex-encoded and be lowercase, as defined by
+  Section 8 of RFC 4648.
 Obtain the private signing key of the identity that is making the request. This should be in base64-encoded DER format. See Cryptography for Identity Creation for more information.
 Create an RSA signature of the string to sign using RSASSA-PSS and the private signing key, with the following parameters:
 SHA256 as the digest function
