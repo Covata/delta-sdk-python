@@ -12,9 +12,19 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-===============
-Request Signing
-===============
+======
+Signer
+======
+
+The Delta Signer package implements the CVT1 request signing scheme detailed in
+the section below.
+
+.. automodule:: covata.delta.signer
+    :members:
+
+====================
+CVT1 Request Signing
+====================
 
 All requests to the Delta service (with the exception of the Create Identity
 request) must be signed using the CVT1 request signing scheme, which is similar
