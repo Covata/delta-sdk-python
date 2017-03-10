@@ -364,56 +364,101 @@ The final signature is calculated according to the following steps:
 
 #. Calculate a SHA256 digest of the string to sign from the previous stage
    (above). The output must be hex-encoded and be lowercase, as defined by
-  Section 8 of RFC 4648.
-Obtain the private signing key of the identity that is making the request. This should be in base64-encoded DER format. See Cryptography for Identity Creation for more information.
-Create an RSA signature of the string to sign using RSASSA-PSS and the private signing key, with the following parameters:
-SHA256 as the digest function
-MGF1 with SHA256 as the mask generator function
-32 bytes as the salt value for MGF1
-base64 encoding
-(info) Note that RSASSA-PSS will generate a different result each time due to the salt.
-The following shows an example SHA256 digest output of the string to sign.
-725890633d7210c079a408d521c6545ffefc6c8e1fa8843052a047a1568a5912
-Next, using the private signing key, create an RSA signature of the String to Sign. An example of a private signing key in base64-encoded DER format is shown below.
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCk2gVVEjuQEUFKvysoJS8i3hjc0cJ9OJtAZHqz0QsUbjQz0jvurUpbh5jJhAIlOFLRjNhTEwoEj/YUr3IGd1LFFDfezXbChUGh+TcptCGr97BQuMEAiP1kPT+YtS8QYtfwTq13DvP4WZ9ql129m8dfrBPXO/eBd0dSV3NLUiG1YIEnPWREJRAmV+FDWtxQYSBCa+JeUGRz3iRagL6oqDPpc2mcdU4o7gvjfoYNgTtcJw5Qnn6vRsu1oFgs7GgAt3yHNzlv8Mg+HXqI7J7XlEv7n36iGUHdiRhmxWZSt7/yz/jvuB76jbgRZnctehxzQVVk/9Xb3GOFcOj4jpkEZX9VAgMBAAECggEAB9FfF125/WcUFZtjTJAW4CxwOWipNI8OrcsWFpj/UYS4bQy3UuZc9GJF2KiuAV3eb5miWK46d2TsYqa/XZcjEb2XuLU9wJPZPPk4qH2mayVf8zQP0xqsCajt7ywIg1psqzTP/Sl0YH6/lKqBA5Dzr5HVjwuE/VrOwxTqntPSTWumhd2tXc434QdfEWXsVW7H6xKLPTZTK1jWYzQxYZmvf/td5NKKXmhfY3TMamRHb2x5XDnnCE6ktOs83CffBISzhucSe/w5/1DChRy3Xuri442nIxKtQI1Ad21aI7C/yoiUqPYpt0TkDJ53KFKgsPGvyY7c6fxL3ERfD/mpLO01gQKBgQDsxOWTf+p2C+det5p2j6iZ5N/dyWL5tUm9WPnmX3r83h3VkOdEdeGPa8QNhVrHv8us9VYOUVDh/0YDNzTJQog+QeV205NGQ272C2oRwkfo6ltHk/0DEjyPFSw0viyPSoBN0gytRqULmA0ULXZ7LcL36zDrQlD0DUU3HJvG58NGyQKBgQCyPcFPU5Vlx3ll0YSezfj9e1N82/bws7Tgk+3r6A8kdNvZN/9xZ7QKJ6a2ihHfs8HIGCGfTLCj5nXcbERfc784Cx4/jvaMj2BICuqf5K4Xatab0FmAF9waOwtkO61/dd8OKPf9nE04C8HZDQvIg5FqDtdHcOt9QsbudBrr7VKeLQKBgCuq2MiOY/ink2GFrUhGkIrpilxGQynYxKPWYCib3Xv7nzb/RZf7wcEI2BzCRo7mkbLxgJCdcLRtt0TqjqK70ZLh5mc2+EeSMknQqxxhX4/WgUU/Rv+lAmRFPGTx2hgHXoh7v/jJObFctrTM+bgYJYhB6UDKd1G7jNNwRE63+ez5AoGAVhbp1YzDbgNoqTsHWUSW7KeybW442Y2S4Z3Rns3Y8nzW6xXW9Ulndjgsl6Ice/XwtNqi8rQx5Rgc+Tf51jirtT/5fi1o+/8MO/+5zzy+sWTS/zMk52+eybSXDfSdGiEueUJkdUQXL+jN2i4o8NJLW/SLGmB5/WhReT7u+eEItIkCgYEAronO5VDCjZXEhJGebUKbKACHamp5DVxqhWsDxUHEldqA7V0OISYOpfOuVMeE7mIAae6yAGXLIhpSALr2fIcKoAKj2iCuzUdHmS8U7xBD7F2XBDHTVltAnhxq+FPd32Sdl6G8uVi1MoBiLAsjvdXMfU36FnZNlJZI4mcx18XoeXU=
-Initialising the cipher using the specified parameters will result in a signed string. This should be encoded in base64. RSASSA-PSS will generate a different signature every time, so running this example generate a different example each time.
-ZwccJzSaGuNO0GRleZFpMqZ3VBs59VAxB7J6COubsCJTnVccmgyx/uxtpRpi9qP20Ytk83SLY0ZyeXRphlZTyW7OqLB1I5U3as9AKqD4WpQK1iNPn7z6K1X3nODq3jWk2TqbcW2pMoFZXGvaCyN5j1ma7Qr/iEYGVDtGzzMdrGKKMfN6GUWVM9nwozXn82eqgjtvxw7X2eA/ecGs44fy10KygdXHiaB+lkzTDfNh1k26FfHF5YEeiBCwCQahYHo89aac0/LeWjjXqlqUiQntYnwUM7hYphbX8ArES75+4VtqIEGf1NCON52ctbifVLjXzhb8j20CfJgXhsl0fwoQpQ==
+   Section 8 of RFC 4648.
+#. Obtain the private signing key of the identity that is making the request.
+   This should be in base64-encoded DER format.
+#. Create an RSA signature of the string to sign using RSASSA-PSS and the
+   private signing key, with the following parameters:
+   - SHA256 as the digest function
+   - MGF1 with SHA256 as the mask generator function
+   - 32 bytes as the salt value for MGF1
+   - base64 encoding
+Note that RSASSA-PSS will generate a different result each time due to the salt.
+
+The following shows an example SHA256 digest output of the string to sign::
+
+ 725890633d7210c079a408d521c6545ffefc6c8e1fa8843052a047a1568a5912
+
+Next, using the private signing key, create an RSA signature of the String to
+Sign. An example of a private signing key in base64-encoded DER format is
+shown below::
+
+ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCk2gVVEjuQEUFKvysoJS8i3hjc0cJ9OJtAZHqz0QsUbjQz0jvurUpbh5jJhAIlOFLRjNhTEwoEj/YUr3IGd1LFFDfezXbChUGh+TcptCGr97BQuMEAiP1kPT+YtS8QYtfwTq13DvP4WZ9ql129m8dfrBPXO/eBd0dSV3NLUiG1YIEnPWREJRAmV+FDWtxQYSBCa+JeUGRz3iRagL6oqDPpc2mcdU4o7gvjfoYNgTtcJw5Qnn6vRsu1oFgs7GgAt3yHNzlv8Mg+HXqI7J7XlEv7n36iGUHdiRhmxWZSt7/yz/jvuB76jbgRZnctehxzQVVk/9Xb3GOFcOj4jpkEZX9VAgMBAAECggEAB9FfF125/WcUFZtjTJAW4CxwOWipNI8OrcsWFpj/UYS4bQy3UuZc9GJF2KiuAV3eb5miWK46d2TsYqa/XZcjEb2XuLU9wJPZPPk4qH2mayVf8zQP0xqsCajt7ywIg1psqzTP/Sl0YH6/lKqBA5Dzr5HVjwuE/VrOwxTqntPSTWumhd2tXc434QdfEWXsVW7H6xKLPTZTK1jWYzQxYZmvf/td5NKKXmhfY3TMamRHb2x5XDnnCE6ktOs83CffBISzhucSe/w5/1DChRy3Xuri442nIxKtQI1Ad21aI7C/yoiUqPYpt0TkDJ53KFKgsPGvyY7c6fxL3ERfD/mpLO01gQKBgQDsxOWTf+p2C+det5p2j6iZ5N/dyWL5tUm9WPnmX3r83h3VkOdEdeGPa8QNhVrHv8us9VYOUVDh/0YDNzTJQog+QeV205NGQ272C2oRwkfo6ltHk/0DEjyPFSw0viyPSoBN0gytRqULmA0ULXZ7LcL36zDrQlD0DUU3HJvG58NGyQKBgQCyPcFPU5Vlx3ll0YSezfj9e1N82/bws7Tgk+3r6A8kdNvZN/9xZ7QKJ6a2ihHfs8HIGCGfTLCj5nXcbERfc784Cx4/jvaMj2BICuqf5K4Xatab0FmAF9waOwtkO61/dd8OKPf9nE04C8HZDQvIg5FqDtdHcOt9QsbudBrr7VKeLQKBgCuq2MiOY/ink2GFrUhGkIrpilxGQynYxKPWYCib3Xv7nzb/RZf7wcEI2BzCRo7mkbLxgJCdcLRtt0TqjqK70ZLh5mc2+EeSMknQqxxhX4/WgUU/Rv+lAmRFPGTx2hgHXoh7v/jJObFctrTM+bgYJYhB6UDKd1G7jNNwRE63+ez5AoGAVhbp1YzDbgNoqTsHWUSW7KeybW442Y2S4Z3Rns3Y8nzW6xXW9Ulndjgsl6Ice/XwtNqi8rQx5Rgc+Tf51jirtT/5fi1o+/8MO/+5zzy+sWTS/zMk52+eybSXDfSdGiEueUJkdUQXL+jN2i4o8NJLW/SLGmB5/WhReT7u+eEItIkCgYEAronO5VDCjZXEhJGebUKbKACHamp5DVxqhWsDxUHEldqA7V0OISYOpfOuVMeE7mIAae6yAGXLIhpSALr2fIcKoAKj2iCuzUdHmS8U7xBD7F2XBDHTVltAnhxq+FPd32Sdl6G8uVi1MoBiLAsjvdXMfU36FnZNlJZI4mcx18XoeXU=
+
+
+Initialising the cipher using the specified parameters will result in a signed
+string. This should be encoded in base64. RSASSA-PSS will generate a different
+signature every time, so running this example generate a different example each
+time.
+
+.. code::
+ ZwccJzSaGuNO0GRleZFpMqZ3VBs59VAxB7J6COubsCJTnVccmgyxuxtpRpi9qP20Ytk83SLY0ZyeXRphlZTyW7OqLB1I5U3as9AKqD4WpQK1iNPn7z6K1X3nODq3jWk2TqbcW2pMoFZXGvaCyN5j1ma7Qr/iEYGVDtGzzMdrGKKMfN6GUWVM9nwozXn82eqgjtvxw7X2eA/ecGs44fy10KygdXHiaB+lkzTDfNh1k26FfHF5YEeiBCwCQahYHo89aac0/LeWjjXqlqUiQntYnwUM7hYphbX8ArES75+4VtqIEGf1NCON52ctbifVLjXzhb8j20CfJgXhsl0fwoQpQ==
 
 Step 4. Adding the authorization header
+---------------------------------------
+
 Add to the request an HTTP header named Authorization, whose value includes:
-The algorithm of the CVT1 signing scheme.
-The ID of the identity making the request.
-The signed headers.
-The signature calculated in Stage 3 (above).
-The contents of the header are created after you calculate the signature as described in stage 3, so the Authorization header is not included in the list of signed headers. Although the header is named Authorization, the signing information is actually used for authentication.
-The following pseudocode shows the construction of the Authorization header:
-Authorization: algorithm Identity=identityId, SignedHeaders=signedHeaders, Signature=signature
-The following example shows a finished Authorization header (the algorithm is the CVT1 request signing scheme as designated by the string 'CVT1-RSA4096-SHA256):
-Authorization: CVT1-RSA4096-SHA256 Identity=b15e50ea-ce07-4a3d-a4fc-0cd6b4d9ab13, SignedHeaders=content-type;host;x-cvt-date, Signature=ZwccJzSaGuNO0GRleZFpMqZ3VBs59VAxB7J6COubsCJTnVccmgyx/uxtpRpi9qP20Ytk83SLY0ZyeXRphlZTyW7OqLB1I5U3as9AKqD4WpQK1iNPn7z6K1X3nODq3jWk2TqbcW2pMoFZXGvaCyN5j1ma7Qr/iEYGVDtGzzMdrGKKMfN6GUWVM9nwozXn82eqgjtvxw7X2eA/ecGs44fy10KygdXHiaB+lkzTDfNh1k26FfHF5YEeiBCwCQahYHo89aac0/LeWjjXqlqUiQntYnwUM7hYphbX8ArES75+4VtqIEGf1NCON52ctbifVLjXzhb8j20CfJgXhsl0fwoQpQ==
+- The algorithm of the CVT1 signing scheme.
+- The ID of the identity making the request.
+- The signed headers.
+- The signature calculated in Stage 3 (above).
+
+The contents of the header are created after you calculate the signature as
+described in stage 3, so the Authorization header is not included in the list
+of signed headers. Although the header is named Authorization, the signing
+information is actually used for authentication.
+
+The following pseudocode shows the construction of the Authorization header::
+
+ Authorization: algorithm Identity=identityId, SignedHeaders=signedHeaders, Signature=signature
+
+The following example shows a finished Authorization header (the algorithm is
+the CVT1 request signing scheme as designated by the string
+``CVT1-RSA4096-SHA256``)::
+
+ Authorization: CVT1-RSA4096-SHA256 Identity=b15e50ea-ce07-4a3d-a4fc-0cd6b4d9ab13, SignedHeaders=content-type;host;x-cvt-date, Signature=ZwccJzSaGuNO0GRleZFpMqZ3VBs59VAxB7J6COubsCJTnVccmgyx/uxtpRpi9qP20Ytk83SLY0ZyeXRphlZTyW7OqLB1I5U3as9AKqD4WpQK1iNPn7z6K1X3nODq3jWk2TqbcW2pMoFZXGvaCyN5j1ma7Qr/iEYGVDtGzzMdrGKKMfN6GUWVM9nwozXn82eqgjtvxw7X2eA/ecGs44fy10KygdXHiaB+lkzTDfNh1k26FfHF5YEeiBCwCQahYHo89aac0/LeWjjXqlqUiQntYnwUM7hYphbX8ArES75+4VtqIEGf1NCON52ctbifVLjXzhb8j20CfJgXhsl0fwoQpQ==
 
 Note the following:
-There is no comma between the algorithm and Identity. However, the SignedHeaders and Signature are separated from the preceding values with a comma.
-The  value is the identifier generated by Delta during identity registration.
-How Delta verifies a signed request
-The Delta service will process all requests to establish authenticity and set the identity for the actions requested. The following elements are extracted from the Authorization header:
-identityId
-signedHeaders
-signature
-Using these elements, the following actions are performed on the request to ensure the signature is valid:
-Create a canonical request, consisting of:
-The HTTP request method
-The canonical path
-The canonical query string
-The canonical headers, as determined by the list of signedHeaders
-The signedHeaders list
-The hashed payload
-Create a string to sign, using the canonical request from step 1.
-Calculate a SHA256 digest of the string to sign from step 2. The output must be hex-encoded and be lowercase, as defined by Section 8 of RFC 4648.
-Retrieve the public signing (verification) key of the identity matching the identifierId
-Decrypt the signature with the public signing (verification) key using RSASSA-PSS with the following parameters:
-SHA256 as the digest function
-MGF1 with SHA256 as the mask generator function
-32 bytes as the salt value for MGF1
-Check the decrypted signature (from step 5) matches the digested string to sign (from step 3)- if match, then the request is allowed to continue, otherwise a HTTP status 403 is returned
-(info) It is often helpful in your testing to construct a test utility to check your request signing code with the above verification steps.
 
+- There is no comma between the algorithm and Identity. However, the
+  SignedHeaders and Signature are separated from the preceding values with a
+  comma.
+- The value is the identifier generated by Delta during identity registration.
+
+How Delta verifies a signed request
+===================================
+
+The Delta service will process all requests to establish authenticity and set
+the identity for the actions requested. The following elements are extracted
+from the Authorization header:
+
+- identityId
+- signedHeaders
+- signature
+
+Using these elements, the following actions are performed on the request to
+ensure the signature is valid:
+
+#. Create a canonical request, consisting of:
+
+   - The HTTP request method
+   - The canonical path
+   - The canonical query string
+   - The canonical headers, as determined by the list of signedHeaders
+   - The signedHeaders list
+   - The hashed payload
+
+#. Create a string to sign, using the canonical request from step 1.
+#. Calculate a SHA256 digest of the string to sign from step 2. The output must
+   be hex-encoded and be lowercase, as defined by Section 8 of RFC 4648.
+#. Retrieve the public signing (verification) key of the identity matching the
+   identifierId.
+#. Decrypt the signature with the public signing (verification) key using
+   RSASSA-PSS with the following parameters:
+
+   - SHA256 as the digest function
+   - MGF1 with SHA256 as the mask generator function
+   - 32 bytes as the salt value for MGF1
+#. Check the decrypted signature (from step 5) matches the digested string to
+   sign (from step 3)- if match, then the request is allowed to continue,
+   otherwise a HTTP status 403 is returned
