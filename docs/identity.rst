@@ -15,7 +15,7 @@
 Identity
 ========
 
-An Identity is entity (such as user, device, or another service) registered
+An Identity is an entity (such as user, device, or another service) registered
 with Delta and is comprised of a number of attributes, of which two rely on
 cryptographic primitives. These are the long-lived key pairs:
 
