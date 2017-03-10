@@ -95,5 +95,12 @@ def test_get_derived_secret(secret, client, page, page_size):
         page_size=page_size)
 
 
+@pytest.mark.parametrize("metadata", [{}, dict(a="1", b="2")])
+def test_add_metadata(secret, client, metadata):
+    secret.add_metadata(metadata)
+    client.add_secret_metadata.assert_called_with(secret.created_by,
+                                                  secret.id, metadata)
+
+
 def test_repr(secret):
     assert str(secret) == "Secret(id={})".format(secret.id)

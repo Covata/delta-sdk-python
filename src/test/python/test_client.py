@@ -298,7 +298,7 @@ def test_add_secret_metadata(client, api_client, identity_id, secret_id,
     expected = existing.copy()
     expected.update(metadata)
     api_client.get_secret_metadata.return_value = existing, 1
-    client.add_secret_metadata(identity_id, secret_id, 1, metadata)
+    client.add_secret_metadata(identity_id, secret_id, metadata)
     api_client.update_secret_metadata.assert_called_with(
         identity_id,
         secret_id,
