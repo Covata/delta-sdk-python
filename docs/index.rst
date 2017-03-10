@@ -40,6 +40,7 @@ across networks, and organisations.
     api
     crypto
     keystore
+    request_signing
 
 Indices and tables
 ==================
