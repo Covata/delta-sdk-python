@@ -15,6 +15,28 @@
 Identity
 ========
 
+An Identity is an entity (such as user, device, or another service) registered
+with Delta and is comprised of a number of attributes, of which two rely on
+cryptographic primitives. These are the long-lived key pairs:
+
+- Encryption key pair - An asymmetric key pair, associated with an identity
+  for the purposes of encrypting and decrypting secret encryption keys:
+   - Public encryption key - The public key that functions as a key encryption
+     key, to encrypt a secret encryption key. The public encryption key is
+     stored in Delta as part of the identity creation process.
+   - Private decryption key - The private key used to decrypt a secret
+    encryption key. The private decryption key must be managed outside of Delta.
+
+- Signing key pair - An asymmetric key pair, associated with an identity for
+  the purpose of request signing and authentication:
+   - Public signing verification key - The public key used to verify request
+     authenticity and ownership. The public signing verification key is stored
+     in Delta as part of the identity creation process and is not publicly
+     visible (unlike the public encryption key).
+   - Private signing key - The private key used to sign requests as required by
+     Delta so that the requests can be verified. The private signing key must be
+     managed outside of Delta.
+
 .. currentmodule:: covata.delta
 
 .. autoclass:: Identity
