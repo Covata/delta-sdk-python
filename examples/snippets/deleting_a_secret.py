@@ -23,5 +23,4 @@ identity.delete_secret("a9724dd3-8fa1-4ecd-bbda-331748410cf8")
 
 # option 2: via client object
 secret = client.delete_secret("8e91cb8c-1ea5-4b69-bedf-9a14940cce44",
-                              "cb684cfe-11d1-47da-8433-436ca5e6efb0",
-                              "506542dd-161f-46b0-825d-364b0b19bc70")
+                              "cb684cfe-11d1-47da-8433-436ca5e6efb0")
