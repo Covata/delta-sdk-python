@@ -65,8 +65,6 @@ Identity
    identity = client.get_identity("8e91cb8c-1ea5-4b69-bedf-9a14940cce44",
                                   "1cb9375f-329c-405a-9b0c-b1659d9c66a4")
 
-- Add metadata to an identity
-
 
 Secret
 ------
