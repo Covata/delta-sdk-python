@@ -41,6 +41,7 @@ across networks, and organisations.
     api
     crypto
     keystore
+    request_signing
     glossary
 
 Indices and tables
