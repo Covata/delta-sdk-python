@@ -12,16 +12,6 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-======
-Signer
-======
-
-The Delta Signer package implements the CVT1 request signing scheme detailed in
-the section below.
-
-.. automodule:: covata.delta.signer
-    :members:
-
 ====================
 CVT1 Request Signing
 ====================
@@ -48,8 +38,8 @@ previous stage):
 
 Each of these steps are described below.
 
-Step 1. Creating a canonical request
-====================================
+Creating a canonical request
+============================
 
 The canonical request is a representation of the request in a standardised
 (canonical) format that can be procedurally constructed (and reconstructed on
@@ -79,16 +69,16 @@ canonical request::
 
 To construct each of these elements, follow the steps below.
 
-Canonical request - constructing the HTTP request method
---------------------------------------------------------
+Constructing the HTTP request method
+------------------------------------
 This is the HTTP request method (GET, PUT, POST, etc.) in uppercase.
 
 Example for a POST request::
 
  POST
 
-Canonical request - constructing the canonical path
----------------------------------------------------
+Constructing the canonical path
+-------------------------------
 
 The canonical path is the absolute path component of the entire URI - that is,
 everything in the URI from the end of the HTTP host component through to the
@@ -111,8 +101,8 @@ too::
 
  /my%20secrets/
 
-Canonical request - constructing the canonical query string
------------------------------------------------------------
+Constructing the canonical query string
+---------------------------------------
 The canonical query string consists of the query string, sorted, URI-encoded
 and normalised according to RFC 3986. If the request does not include a query
 string, use an empty string so that the delimited canonical header will include
@@ -157,8 +147,8 @@ parameter has no value:
 
 exampleQueryParamName=&sampleQueryParamName=sampleQueryParamValue
 
-Canonical request - constructing the canonical headers
-------------------------------------------------------
+Constructing the canonical headers
+----------------------------------
 
 The canonical headers consist of a list of all the HTTP headers that are
 included with the signed request in a form that Delta can interpret. At a
@@ -213,8 +203,8 @@ And the list of headers in their canonical form::
   my-header1:a b c
   my-header2:"a b c"
 
-Canonical request - constructing the signed headers
----------------------------------------------------
+Constructing the signed headers
+-------------------------------
 
 The signed headers is the list of headers which are included in the list
 canonical headers (above).
@@ -245,8 +235,8 @@ The following example shows a signed header string::
 
  content-type;cvt-date;host;my-header1;my-header2
 
-Canonical request - constructing the hashed payload
----------------------------------------------------
+Constructing the hashed payload
+-------------------------------
 
 Use a hash (digest) function like SHA256 to create a hashed value from the body
 of the request (i.e. the payload). The hashed payload must be represented as a
@@ -311,8 +301,8 @@ An example canonical request string is shown below::
  content-type;cvt-date;host;my-header1;my-header2
  daadd72c2e2f5b63ad67e2131a598e4a6edcd75d6bc70c36e7e3f3ec5de95417
 
-Step 2. Creating a string to sign
-=================================
+Creating a string to sign
+=========================
 
 The string to sign is a set of strings representing meta information about the
 entire request.
@@ -327,15 +317,15 @@ the digest of the canonical request (using SHA256), delimited with the newline
 	+ '\n' + RequestDate
 	+ '\n' + HashedCanonicalRequest
 
-String to sign - Algorithm
---------------------------
+Algorithm
+---------
 
 The designation for the CVT1 request signing scheme algorithm is::
 
  CVT1-RSA4096-SHA256
 
-String to sign - RequestDate
-----------------------------
+Request Date
+------------
 
 The request date is the value of the cvt-date header (which is in ISO8601
 format YYYYMMDD'T'HHMMSS'Z'). The date/time must be in UTC and does not include
@@ -345,8 +335,8 @@ stages.
 .. code::
    20150830T123600Z
 
-String to sign - HashedCanonicalRequest
----------------------------------------
+Hashed Canonical Request
+------------------------
 
 The canonical request (see Example canonical request and Stage 1 description
 above) whose content has been hashed using the SHA256 algorithm.
@@ -367,8 +357,8 @@ at 12:34.56pm::
  20170131T123456Z
  cc113fcef267dbbdce8416b1a9a8bcb09a32460142449c3289bc093598a9eef0
 
-Step 3. Calculating the signature
----------------------------------
+Calculating the signature
+=========================
 
 The final signature is calculated according to the following steps:
 
@@ -404,8 +394,8 @@ time.
 .. code::
  ZwccJzSaGuNO0GRleZFpMqZ3VBs59VAxB7J6COubsCJTnVccmgyxuxtpRpi9qP20Ytk83SLY0ZyeXRphlZTyW7OqLB1I5U3as9AKqD4WpQK1iNPn7z6K1X3nODq3jWk2TqbcW2pMoFZXGvaCyN5j1ma7Qr/iEYGVDtGzzMdrGKKMfN6GUWVM9nwozXn82eqgjtvxw7X2eA/ecGs44fy10KygdXHiaB+lkzTDfNh1k26FfHF5YEeiBCwCQahYHo89aac0/LeWjjXqlqUiQntYnwUM7hYphbX8ArES75+4VtqIEGf1NCON52ctbifVLjXzhb8j20CfJgXhsl0fwoQpQ==
 
-Step 4. Adding the authorization header
----------------------------------------
+Adding the authorization header
+===============================
 
 Add to the request an HTTP header named Authorization, whose value includes:
 - The algorithm of the CVT1 signing scheme.
@@ -434,41 +424,3 @@ Note the following:
   SignedHeaders and Signature are separated from the preceding values with a
   comma.
 - The value is the identifier generated by Delta during identity registration.
-
-How Delta verifies a signed request
-===================================
-
-The Delta service will process all requests to establish authenticity and set
-the identity for the actions requested. The following elements are extracted
-from the Authorization header:
-
-- identityId
-- signedHeaders
-- signature
-
-Using these elements, the following actions are performed on the request to
-ensure the signature is valid:
-
-#. Create a canonical request, consisting of:
-
-   - The HTTP request method
-   - The canonical path
-   - The canonical query string
-   - The canonical headers, as determined by the list of signedHeaders
-   - The signedHeaders list
-   - The hashed payload
-
-#. Create a string to sign, using the canonical request from step 1.
-#. Calculate a SHA256 digest of the string to sign from step 2. The output must
-   be hex-encoded and be lowercase, as defined by Section 8 of RFC 4648.
-#. Retrieve the public signing (verification) key of the identity matching the
-   identifierId.
-#. Decrypt the signature with the public signing (verification) key using
-   RSASSA-PSS with the following parameters:
-
-   - SHA256 as the digest function
-   - MGF1 with SHA256 as the mask generator function
-   - 32 bytes as the salt value for MGF1
-#. Check the decrypted signature (from step 5) matches the digested string to
-   sign (from step 3)- if match, then the request is allowed to continue,
-   otherwise a HTTP status 403 is returned
