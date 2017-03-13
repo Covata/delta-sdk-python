@@ -32,6 +32,7 @@ across networks, and organisations.
 
     self
     quick_start
+    example_use
     client
     identity
     secret
@@ -41,6 +42,7 @@ across networks, and organisations.
     crypto
     keystore
     request_signing
+    glossary
 
 Indices and tables
 ==================
