@@ -193,7 +193,7 @@ def test_create_secret(client, api_client, key_store, private_key, mock_crypto):
                                   "this is my secret".encode('utf-8'))
 
     assert secret.parent == client
-    assert secret.id == expected_id
+    assert secret.secret_id == expected_id
     assert secret.created == "12345"
     assert secret.rsa_key_owner == rsa_key_owner_id
     assert secret.created_by == created_by_id
@@ -230,7 +230,7 @@ def test_create_secret_via_identity(client, api_client, key_store,
     secret = identity.create_secret("this is my secret".encode('utf-8'))
 
     assert secret.parent == client
-    assert secret.id == expected_id
+    assert secret.secret_id == expected_id
     assert secret.created == "12345"
     assert secret.rsa_key_owner == created_by_id
     assert secret.created_by == created_by_id
@@ -266,7 +266,7 @@ def test_share_secret(client, api_client, key_store, private_key, mock_crypto):
     secret = client.share_secret(created_by_id, recipient_id, secret_id)
 
     assert secret.parent == client
-    assert secret.id == shared_secret_id
+    assert secret.secret_id == shared_secret_id
     assert secret.created == "67890"
     assert secret.rsa_key_owner == recipient_id
     assert secret.created_by == created_by_id
@@ -372,7 +372,7 @@ def test_get_secrets(client, api_client):
     assert len(secrets) == len(expected_json_response)
 
     for secret, secret_json in zip(secrets, expected_json_response):
-        assert secret.id == secret_json["id"]
+        assert secret.secret_id == secret_json["id"]
         assert secret.base_secret_id == secret_json["baseSecret"]
         assert secret.created == secret_json["created"]
         assert secret.created_by == secret_json["createdBy"]

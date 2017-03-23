@@ -249,7 +249,7 @@ class Client:
             metadata, lookup_type, page, page_size)
         for secret in secrets:
             yield Secret(self,
-                         id=secret["id"],
+                         secret_id=secret["id"],
                          created=secret["created"],
                          rsa_key_owner=secret.get("rsaKeyOwner"),
                          created_by=secret["createdBy"],
@@ -330,7 +330,7 @@ class Client:
             encryption_details=dict(
                 symmetricKey=b64encode(encrypted_key).decode('utf-8'),
                 initialisationVector=b64encode(iv).decode('utf-8')),
-            base_secret_id=secret.id,
+            base_secret_id=secret.secret_id,
             rsa_key_owner_id=recipient.identity_id)
 
         return self.get_secret(recipient.identity_id, response["id"])
@@ -549,14 +549,14 @@ class Secret:
     returned as a result of Client.
     """
 
-    def __init__(self, parent, id, created, rsa_key_owner, created_by,
+    def __init__(self, parent, secret_id, created, rsa_key_owner, created_by,
                  encryption_details, base_secret_id=None):
         """
         Creates a new secret with the given parameters.
 
         :param parent: the Delta client that constructed this instance
         :type parent: :class:`~.Client`
-        :param str id: the id of the secret
+        :param str secret_id: the id of the secret
         :param str created: the created date
         :param str rsa_key_owner: the identity id of the RSA key owner
         :param str created_by: the identity id of the secret creator
@@ -564,7 +564,7 @@ class Secret:
         :type encryption_details: :class:`~.EncryptionDetails`
         """
         self.__parent = parent
-        self.__id = id
+        self.__secret_id = secret_id
         self.__created = created
         self.__rsa_key_owner = rsa_key_owner
         self.__created_by = created_by
@@ -576,8 +576,8 @@ class Secret:
         return self.__parent
 
     @property
-    def id(self):
-        return self.__id
+    def secret_id(self):
+        return self.__secret_id
 
     @property
     def created(self):
@@ -609,7 +609,7 @@ class Secret:
         """
         return self.parent.get_secret_content(
             self.rsa_key_owner,
-            self.id,
+            self.secret_id,
             self.encryption_details.symmetric_key,
             self.encryption_details.initialisation_vector)
 
@@ -629,7 +629,7 @@ class Secret:
         return self.parent.share_secret(
             self.created_by,
             identity_id,
-            self.id)
+            self.secret_id)
 
     def get_events(self, rsa_key_owner_id=None):
         """
@@ -644,7 +644,7 @@ class Secret:
         :return: a generator of audit events
         :rtype: generator of :class:`~.Event`
         """
-        return self.parent.get_events(self.created_by, self.id,
+        return self.parent.get_events(self.created_by, self.secret_id,
                                       rsa_key_owner_id)
 
     def get_derived_secrets(self, page=None, page_size=None):
@@ -665,7 +665,7 @@ class Secret:
         """
 
         self.parent.get_secrets(requestor_id=self.created_by,
-                                base_secret_id=self.id,
+                                base_secret_id=self.secret_id,
                                 page=page,
                                 page_size=page_size)
 
@@ -678,7 +678,8 @@ class Secret:
         :param metadata: a map of metadata key and value pairs
         :type metadata: dict[str, str]
         """
-        self.parent.add_secret_metadata(self.created_by, self.id, metadata)
+        self.parent.add_secret_metadata(
+            self.created_by, self.secret_id, metadata)
 
     def get_metadata(self):
         """
@@ -691,11 +692,12 @@ class Secret:
         :rtype: dict[str, str]
         """
         metadata, version = self.parent.get_secret_metadata(self.created_by,
-                                                            self.id)
+                                                            self.secret_id)
         return metadata
 
     def __repr__(self):
-        return "{cls}(id={id})".format(cls=self.__class__.__name__, id=self.id)
+        return "{cls}(secret_id={secret_id})".format(
+            cls=self.__class__.__name__, secret_id=self.secret_id)
 
 
 class EncryptionDetails:
