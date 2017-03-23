@@ -342,7 +342,7 @@ def test_get_events(client, api_client, secret_id, rsa_key_owner_id):
         )
         assert r.event_details == expected_event_details
         assert r.host == expected["host"]
-        assert r.id == expected["id"]
+        assert r.event_id == expected["id"]
         assert r.source_ip == expected["sourceIp"]
         assert r.timestamp == datetime.strptime(
             expected["timestamp"], "%Y-%m-%dT%H:%M:%S.%fZ")

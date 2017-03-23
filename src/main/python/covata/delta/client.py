@@ -157,7 +157,7 @@ class Client:
                     secret_owner_id=details.get("secretOwnerId")
                 ),
                 host=event["host"],
-                id=event["id"],
+                event_id=event["id"],
                 source_ip=event["sourceIp"],
                 timestamp=datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ"),
                 event_type=event["type"]
@@ -763,7 +763,7 @@ class Event:
     def __init__(self,
                  event_details,
                  host,
-                 id,
+                 event_id,
                  source_ip,
                  timestamp,
                  event_type):
@@ -773,7 +773,7 @@ class Event:
         :param event_details: details of the audit event.
         :type event_details: :class:`~.EventDetails`
         :param str host: the host address
-        :param str id: the identifier of the event object
+        :param str event_id: the identifier of the event object
         :param str source_ip: the source IP address
         :param timestamp: the timestamp of the event
         :type timestamp: datetime
@@ -781,7 +781,7 @@ class Event:
         """
         self.__event_details = event_details
         self.__host = host
-        self.__id = id
+        self.__event_id = event_id
         self.__source_ip = source_ip
         self.__timestamp = timestamp
         self.__event_type = event_type
@@ -795,8 +795,8 @@ class Event:
         return self.__host
 
     @property
-    def id(self):
-        return self.__id
+    def event_id(self):
+        return self.__event_id
 
     @property
     def source_ip(self):
@@ -811,4 +811,5 @@ class Event:
         return self.__event_type
 
     def __repr__(self):
-        return "{cls}(id={id})".format(cls=self.__class__.__name__, id=self.id)
+        return "{cls}(event_id={event_id})".format(
+            cls=self.__class__.__name__, event_id=self.event_id)
