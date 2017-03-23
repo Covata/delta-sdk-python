@@ -88,7 +88,7 @@ def test_create_identity(mocker, client, api_client, key_store, private_key,
         private_signing_key=private_key,
         private_encryption_key=private_key)
 
-    assert identity.id == expected_id
+    assert identity.identity_id == expected_id
     assert identity.external_id == ext_id if ext_id is not None \
         else identity.external_id is None
     assert identity.metadata == metadata if metadata is not None \
@@ -114,7 +114,7 @@ def test_get_identity_empty_ext_id_and_metadata(mocker, client, api_client,
     metadata_ = identity.metadata
 
     assert identity.parent == client
-    assert identity.id == expected_id
+    assert identity.identity_id == expected_id
     assert ext_id_ == ext_id if ext_id else ext_id_ is None
     assert metadata_ == metadata if metadata else metadata_ is None
     assert identity.public_encryption_key == "crypto_public_key"
@@ -146,7 +146,7 @@ def test_get_identities_by_metadata(mocker, client, api_client, identities):
         ext_id = identity.get("externalId")
 
         assert identity_.parent == client
-        assert identity_.id == identity["id"]
+        assert identity_.identity_id == identity["id"]
         assert identity_.public_encryption_key == identity["cryptoPublicKey"]
         assert identity_.metadata == identity["metadata"]
         assert ext_id_ == ext_id if ext_id is not None else ext_id_ is None
@@ -166,7 +166,7 @@ def test_get_identity(client, api_client, auth_id, identity_id):
     identity = client.get_identity(expected_id)
 
     assert identity.parent == client
-    assert identity.id == expected_id
+    assert identity.identity_id == expected_id
     assert identity.external_id == "1"
     assert identity.metadata == dict(name="Bob")
     assert identity.public_encryption_key == "crypto_public_key"

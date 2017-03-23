@@ -26,7 +26,7 @@ def client(mocker):
 @pytest.fixture(scope="function")
 def identity_a(client):
     return Identity(parent=client,
-                    id="id-a",
+                    identity_id="id-a",
                     public_encryption_key="key-a",
                     external_id="ext-a",
                     metadata=dict(name="a"))
@@ -35,7 +35,7 @@ def identity_a(client):
 @pytest.fixture(scope="function")
 def identity_b(client):
     return Identity(parent=client,
-                    id="id-b",
+                    identity_id="id-b",
                     public_encryption_key="key-b",
                     external_id="ext-b",
                     metadata=dict(name="b"))
@@ -64,9 +64,9 @@ def test_get_content(secret, client):
 
 
 def test_share_with(secret, identity_b, client):
-    secret.share_with(identity_b.id)
+    secret.share_with(identity_b.identity_id)
     client.share_secret.assert_called_with(secret.created_by,
-                                           identity_b.id,
+                                           identity_b.identity_id,
                                            secret.id)
 
 
