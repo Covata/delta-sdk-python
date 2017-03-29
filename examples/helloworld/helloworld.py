@@ -27,22 +27,22 @@ def main():
     client = Client(key_store)
 
     identity_a = client.create_identity()
-    print("Identity A created; identity id = {}".format(identity_a.id))
+    print("Identity A created; identity id = {}".format(identity_a.identity_id))
 
     secret = identity_a.create_secret("Hello World!".encode("utf-8"))
     print("Identity A: Created a base secret; secret id = {}; content = {}"
-          .format(secret.id, secret.get_content().decode('utf-8')))
+          .format(secret.secret_id, secret.get_content().decode('utf-8')))
 
     identity_b = client.create_identity()
-    print("Identity B created; identity id = {}".format(identity_b.id))
+    print("Identity B created; identity id = {}".format(identity_b.identity_id))
 
-    derived_secret_id = secret.share_with(identity_b.id).id
+    derived_secret_id = secret.share_with(identity_b.identity_id).secret_id
     print("Identity A: Shared a derived secret with Identity B; "
           "derived secret id = {}".format(derived_secret_id))
 
     derived_secret = identity_b.retrieve_secret(derived_secret_id)
     print("Identity B: Retrieved a derived secret; secret id = {}; content = {}"
-          .format(derived_secret.id,
+          .format(derived_secret.secret_id,
                   derived_secret.get_content().decode('utf-8')))
 
 if __name__ == "__main__":

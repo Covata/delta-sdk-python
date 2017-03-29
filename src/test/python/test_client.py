@@ -88,7 +88,7 @@ def test_create_identity(mocker, client, api_client, key_store, private_key,
         private_signing_key=private_key,
         private_encryption_key=private_key)
 
-    assert identity.id == expected_id
+    assert identity.identity_id == expected_id
     assert identity.external_id == ext_id if ext_id is not None \
         else identity.external_id is None
     assert identity.metadata == metadata if metadata is not None \
@@ -114,7 +114,7 @@ def test_get_identity_empty_ext_id_and_metadata(mocker, client, api_client,
     metadata_ = identity.metadata
 
     assert identity.parent == client
-    assert identity.id == expected_id
+    assert identity.identity_id == expected_id
     assert ext_id_ == ext_id if ext_id else ext_id_ is None
     assert metadata_ == metadata if metadata else metadata_ is None
     assert identity.public_encryption_key == "crypto_public_key"
@@ -146,7 +146,7 @@ def test_get_identities_by_metadata(mocker, client, api_client, identities):
         ext_id = identity.get("externalId")
 
         assert identity_.parent == client
-        assert identity_.id == identity["id"]
+        assert identity_.identity_id == identity["id"]
         assert identity_.public_encryption_key == identity["cryptoPublicKey"]
         assert identity_.metadata == identity["metadata"]
         assert ext_id_ == ext_id if ext_id is not None else ext_id_ is None
@@ -166,7 +166,7 @@ def test_get_identity(client, api_client, auth_id, identity_id):
     identity = client.get_identity(expected_id)
 
     assert identity.parent == client
-    assert identity.id == expected_id
+    assert identity.identity_id == expected_id
     assert identity.external_id == "1"
     assert identity.metadata == dict(name="Bob")
     assert identity.public_encryption_key == "crypto_public_key"
@@ -193,7 +193,7 @@ def test_create_secret(client, api_client, key_store, private_key, mock_crypto):
                                   "this is my secret".encode('utf-8'))
 
     assert secret.parent == client
-    assert secret.id == expected_id
+    assert secret.secret_id == expected_id
     assert secret.created == "12345"
     assert secret.rsa_key_owner == rsa_key_owner_id
     assert secret.created_by == created_by_id
@@ -230,7 +230,7 @@ def test_create_secret_via_identity(client, api_client, key_store,
     secret = identity.create_secret("this is my secret".encode('utf-8'))
 
     assert secret.parent == client
-    assert secret.id == expected_id
+    assert secret.secret_id == expected_id
     assert secret.created == "12345"
     assert secret.rsa_key_owner == created_by_id
     assert secret.created_by == created_by_id
@@ -266,7 +266,7 @@ def test_share_secret(client, api_client, key_store, private_key, mock_crypto):
     secret = client.share_secret(created_by_id, recipient_id, secret_id)
 
     assert secret.parent == client
-    assert secret.id == shared_secret_id
+    assert secret.secret_id == shared_secret_id
     assert secret.created == "67890"
     assert secret.rsa_key_owner == recipient_id
     assert secret.created_by == created_by_id
@@ -342,7 +342,7 @@ def test_get_events(client, api_client, secret_id, rsa_key_owner_id):
         )
         assert r.event_details == expected_event_details
         assert r.host == expected["host"]
-        assert r.id == expected["id"]
+        assert r.event_id == expected["id"]
         assert r.source_ip == expected["sourceIp"]
         assert r.timestamp == datetime.strptime(
             expected["timestamp"], "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -372,7 +372,7 @@ def test_get_secrets(client, api_client):
     assert len(secrets) == len(expected_json_response)
 
     for secret, secret_json in zip(secrets, expected_json_response):
-        assert secret.id == secret_json["id"]
+        assert secret.secret_id == secret_json["id"]
         assert secret.base_secret_id == secret_json["baseSecret"]
         assert secret.created == secret_json["created"]
         assert secret.created_by == secret_json["createdBy"]

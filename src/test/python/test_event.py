@@ -29,11 +29,11 @@ def event_a():
         ),
         host="delta.covata.io",
         source_ip="202.54.112.42",
-        id="event-id-a",
+        event_id="event-id-a",
         timestamp=datetime.utcnow(),
         event_type="access_success_event"
     )
 
 
 def test_repr(event_a):
-    assert str(event_a) == "Event(id={})".format(event_a.id)
+    assert str(event_a) == "Event(event_id={})".format(event_a.event_id)
